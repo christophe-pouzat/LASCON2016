@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2016-01-14 jeu. 14:54 -->
+<!-- 2016-01-14 jeu. 16:04 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="viewport" content="width=device-width, initial-scale=1" />
 <title>Origin Of The (High Frequency) Extra-cellular Signal</title>
@@ -177,11 +177,12 @@ for the JavaScript code in this tag.
 <li><a href="#orgheadline3">2.2. Membrane current density</a></li>
 </ul>
 </li>
-<li><a href="#orgheadline7">3. Numerical integration of the H &amp; H equation</a>
+<li><a href="#orgheadline8">3. Numerical integration of the H &amp; H equation</a>
 <ul>
-<li><a href="#orgheadline6">3.1. A standardized form for the non-linear reaction-diffusion equations</a>
+<li><a href="#orgheadline7">3.1. A standardized form for the non-linear reaction-diffusion equations</a>
 <ul>
 <li><a href="#orgheadline5">3.1.1. The heat equation</a></li>
+<li><a href="#orgheadline6">3.1.2. Adding the reaction term: Lee's method</a></li>
 </ul>
 </li>
 </ul>
@@ -316,8 +317,8 @@ At that stage, in order to go further, we need an explicit expression or value f
 </div>
 </div>
 
-<div id="outline-container-orgheadline7" class="outline-2">
-<h2 id="orgheadline7"><span class="section-number-2">3</span> Numerical integration of the H &amp; H equation</h2>
+<div id="outline-container-orgheadline8" class="outline-2">
+<h2 id="orgheadline8"><span class="section-number-2">3</span> Numerical integration of the H &amp; H equation</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 We follow here the exposition of Tuckwell (1988) <i>Introduction to theoretical neurobiology. Volume 2.</i> CUP, pp 54-70. We want to solve the following set of equations:
@@ -335,8 +336,8 @@ where \(C_m\) is the membrane capacitance per unit area [F/cm\(^2\)]; \(\overlin
 </p>
 </div>
 
-<div id="outline-container-orgheadline6" class="outline-3">
-<h3 id="orgheadline6"><span class="section-number-3">3.1</span> A standardized form for the non-linear reaction-diffusion equations</h3>
+<div id="outline-container-orgheadline7" class="outline-3">
+<h3 id="orgheadline7"><span class="section-number-3">3.1</span> A standardized form for the non-linear reaction-diffusion equations</h3>
 <div class="outline-text-3" id="text-3-1">
 <p>
 We will consider a <i>reaction-diffusion</i> system with the form:
@@ -410,12 +411,42 @@ we have:
 </p>
 
 \begin{align}
-    -r \lambda U_{i-1,j+1} + (1+2 r \lambda) U_{i,j+1} -r \lambda U_{i+1,j+1} = r (1-\lambda) U_{i-1,j} + \left(1-2 r (1-\lambda)\right) U_{i,j} r (1-\lambda) U_{i+1,j}\, , \label{eq:general-Crank-Nicolson}\tag{23} 
+    -r \lambda U_{i-1,j+1} + (1+2 r \lambda) U_{i,j+1} -r \lambda U_{i+1,j+1} = r (1-\lambda) U_{i-1,j} + \left(1-2 r (1-\lambda)\right) U_{i,j} + r (1-\lambda) U_{i+1,j}\, , \label{eq:general-Crank-Nicolson}\tag{23} 
 \end{align}
 
 <p>
 where all the unknown terms in \(j+1\) are on the left side. Since \(i = 0,1,\ldots,m\) there are \(m+1\) equations with \(m+1\) unknown. This integration scheme is called <i>implicit</i> because a linear system must be solved to obtain the values of \(u(x,t)\) at the next time step. The system defined by equation 23 is <i>tridiagonal</i> and can be solved without matrix inversion. In <code>Python</code>, the <a href="http://docs.scipy.org/doc/scipy/reference/tutorial/linalg.html">scipy.linalg</a> sub-module provides the <a href="http://docs.scipy.org/doc/scipy/reference/generated/scipy.linalg.solve_banded.html#scipy.linalg.solve_banded">solve_banded</a> function to work efficiently with linear systems exhibiting a banded structure. 
 </p>
+</div>
+</div>
+
+<div id="outline-container-orgheadline6" class="outline-4">
+<h4 id="orgheadline6"><span class="section-number-4">3.1.2</span> Adding the reaction term: Lee's method</h4>
+<div class="outline-text-4" id="text-3-1-2">
+<p>
+We now add a <i>reaction term</i> \(F(u)\) to the scalar heat equation:
+</p>
+
+\begin{align}
+    u_t = D \, u_{xx} + F(u) \, . \label{eq:heat-equation-plus-reaction}\tag{24}
+\end{align}
+
+<p>
+In the Crank-Nicolson method the second space derivative is approximated by the average of its finite-difference approximations at time points \(j\) and \(j+1\). A similar estimate is needed for \(F(u)\); in other words we need \(F(U_{i,j+^1/_2})\) and we approximate \(U_{i,j+^1/_2}\) by:
+</p>
+
+\begin{align}
+    U_{i,j+^1/_2} &\approx U_{i,j} + (U_{i,j} - U_{i,j-1})/2  \nonumber \\
+    &\approx \frac{3}{2} U_{i,j} - \frac{1}{2} U_{i,j-1} \, . \label{eq:mid-point}\tag{25}
+\end{align}
+
+<p>
+And Lees' modification of the Crank-Nicolson method gives the tridiagonal system (remember that \(\lambda\) in equation 23 equals \(^1/_2\) for the Crank-Nicolson method):
+</p>
+
+\begin{align}
+    -\frac{r}{2} U_{i-1,j+1} + (1+r) U_{i,j+1} -\frac{r}{2} U_{i+1,j+1} = \frac{r}{2} U_{i-1,j} + (1-r) U_{i,j} + \frac{r}{2}U_{i+1,j} + \Delta{}t F\left(\frac{3}{2} U_{i,j} - \frac{1}{2} U_{i,j-1}\right)\, . \label{eq:Lees-method}\tag{26} 
+\end{align}
 </div>
 </div>
 </div>
@@ -424,7 +455,7 @@ where all the unknown terms in \(j+1\) are on the left side. Since \(i = 0,1,\ld
 <div id="postamble" class="status">
 <p class="date">Date: <span class="timestamp-wrapper"><span class="timestamp">&lt;2016-01-14 jeu.&gt;</span></span></p>
 <p class="author">Author: Christophe Pouzat</p>
-<p class="date">Created: 2016-01-14 jeu. 14:54</p>
+<p class="date">Created: 2016-01-14 jeu. 16:04</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
