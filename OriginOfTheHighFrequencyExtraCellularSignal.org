@@ -179,4 +179,12 @@ we have:
 
 where all the unknown terms in $j+1$ are on the left side. Since $i = 0,1,\ldots,m$ there are $m+1$ equations with $m+1$ unknown. This integration scheme is called /implicit/ because a linear system must be solved to obtain the values of $u(x,t)$ at the next time step. The system defined by equation 23 is /tridiagonal/ and can be solved without matrix inversion. In =Python=, the [[http://docs.scipy.org/doc/scipy/reference/tutorial/linalg.html][scipy.linalg]] sub-module provides the [[http://docs.scipy.org/doc/scipy/reference/generated/scipy.linalg.solve_banded.html#scipy.linalg.solve_banded][solve_banded]] function to work efficiently with linear systems exhibiting a banded structure. 
 
+*** Adding the reaction term: Lee's method
+
+We now had a /reaction term/ $F(u)$ to the scalar heat equation:
+
+\begin{align}
+    u_t = D \, u_{xx} + F(u) \, . \label{eq:heat-equation-plus-reaction}\tag{24}
+\end{align}
+
  
