@@ -174,17 +174,29 @@ More generally a weight factor $\lambda$ can be used with weight $\lambda$ for t
 we have:
 
 \begin{align}
-    -r \lambda U_{i-1,j+1} + (1+2 r \lambda) U_{i,j+1} -r \lambda U_{i+1,j+1} = r (1-\lambda) U_{i-1,j} + \left(1-2 r (1-\lambda)\right) U_{i,j} r (1-\lambda) U_{i+1,j}\, , \label{eq:general-Crank-Nicolson}\tag{23} 
+    -r \lambda U_{i-1,j+1} + (1+2 r \lambda) U_{i,j+1} -r \lambda U_{i+1,j+1} = r (1-\lambda) U_{i-1,j} + \left(1-2 r (1-\lambda)\right) U_{i,j} + r (1-\lambda) U_{i+1,j}\, , \label{eq:general-Crank-Nicolson}\tag{23} 
 \end{align}
 
 where all the unknown terms in $j+1$ are on the left side. Since $i = 0,1,\ldots,m$ there are $m+1$ equations with $m+1$ unknown. This integration scheme is called /implicit/ because a linear system must be solved to obtain the values of $u(x,t)$ at the next time step. The system defined by equation 23 is /tridiagonal/ and can be solved without matrix inversion. In =Python=, the [[http://docs.scipy.org/doc/scipy/reference/tutorial/linalg.html][scipy.linalg]] sub-module provides the [[http://docs.scipy.org/doc/scipy/reference/generated/scipy.linalg.solve_banded.html#scipy.linalg.solve_banded][solve_banded]] function to work efficiently with linear systems exhibiting a banded structure. 
 
 *** Adding the reaction term: Lee's method
 
-We now had a /reaction term/ $F(u)$ to the scalar heat equation:
+We now add a /reaction term/ $F(u)$ to the scalar heat equation:
 
 \begin{align}
     u_t = D \, u_{xx} + F(u) \, . \label{eq:heat-equation-plus-reaction}\tag{24}
 \end{align}
 
+In the Crank-Nicolson method the second space derivative is approximated by the average of its finite-difference approximations at time points $j$ and $j+1$. A similar estimate is needed for $F(u)$; in other words we need $F(U_{i,j+^1/_2})$ and we approximate $U_{i,j+^1/_2}$ by:
+
+\begin{align}
+    U_{i,j+^1/_2} &\approx U_{i,j} + (U_{i,j} - U_{i,j-1})/2  \nonumber \\
+    &\approx \frac{3}{2} U_{i,j} - \frac{1}{2} U_{i,j-1} \, . \label{eq:mid-point}\tag{25}
+\end{align}
+
+And Lees' modification of the Crank-Nicolson method gives the tridiagonal system (remember that $\lambda$ in equation 23 equals $^1/_2$ for the Crank-Nicolson method):
+
+\begin{align}
+    -\frac{r}{2} U_{i-1,j+1} + (1+r) U_{i,j+1} -\frac{r}{2} U_{i+1,j+1} = \frac{r}{2} U_{i-1,j} + (1-r) U_{i,j} + \frac{r}{2}U_{i+1,j} + \Delta{}t F\left(\frac{3}{2} U_{i,j} - \frac{1}{2} U_{i,j-1}\right)\, . \label{eq:Lees-method}\tag{26} 
+\end{align}
  

@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2016-01-14 jeu. 15:36 -->
+<!-- 2016-01-14 jeu. 16:04 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="viewport" content="width=device-width, initial-scale=1" />
 <title>Origin Of The (High Frequency) Extra-cellular Signal</title>
@@ -411,7 +411,7 @@ we have:
 </p>
 
 \begin{align}
-    -r \lambda U_{i-1,j+1} + (1+2 r \lambda) U_{i,j+1} -r \lambda U_{i+1,j+1} = r (1-\lambda) U_{i-1,j} + \left(1-2 r (1-\lambda)\right) U_{i,j} r (1-\lambda) U_{i+1,j}\, , \label{eq:general-Crank-Nicolson}\tag{23} 
+    -r \lambda U_{i-1,j+1} + (1+2 r \lambda) U_{i,j+1} -r \lambda U_{i+1,j+1} = r (1-\lambda) U_{i-1,j} + \left(1-2 r (1-\lambda)\right) U_{i,j} + r (1-\lambda) U_{i+1,j}\, , \label{eq:general-Crank-Nicolson}\tag{23} 
 \end{align}
 
 <p>
@@ -424,11 +424,28 @@ where all the unknown terms in \(j+1\) are on the left side. Since \(i = 0,1,\ld
 <h4 id="orgheadline6"><span class="section-number-4">3.1.2</span> Adding the reaction term: Lee's method</h4>
 <div class="outline-text-4" id="text-3-1-2">
 <p>
-We now had a <i>reaction term</i> \(F(u)\) to the scalar heat equation:
+We now add a <i>reaction term</i> \(F(u)\) to the scalar heat equation:
 </p>
 
 \begin{align}
     u_t = D \, u_{xx} + F(u) \, . \label{eq:heat-equation-plus-reaction}\tag{24}
+\end{align}
+
+<p>
+In the Crank-Nicolson method the second space derivative is approximated by the average of its finite-difference approximations at time points \(j\) and \(j+1\). A similar estimate is needed for \(F(u)\); in other words we need \(F(U_{i,j+^1/_2})\) and we approximate \(U_{i,j+^1/_2}\) by:
+</p>
+
+\begin{align}
+    U_{i,j+^1/_2} &\approx U_{i,j} + (U_{i,j} - U_{i,j-1})/2  \nonumber \\
+    &\approx \frac{3}{2} U_{i,j} - \frac{1}{2} U_{i,j-1} \, . \label{eq:mid-point}\tag{25}
+\end{align}
+
+<p>
+And Lees' modification of the Crank-Nicolson method gives the tridiagonal system (remember that \(\lambda\) in equation 23 equals \(^1/_2\) for the Crank-Nicolson method):
+</p>
+
+\begin{align}
+    -\frac{r}{2} U_{i-1,j+1} + (1+r) U_{i,j+1} -\frac{r}{2} U_{i+1,j+1} = \frac{r}{2} U_{i-1,j} + (1-r) U_{i,j} + \frac{r}{2}U_{i+1,j} + \Delta{}t F\left(\frac{3}{2} U_{i,j} - \frac{1}{2} U_{i,j-1}\right)\, . \label{eq:Lees-method}\tag{26} 
 \end{align}
 </div>
 </div>
@@ -438,7 +455,7 @@ We now had a <i>reaction term</i> \(F(u)\) to the scalar heat equation:
 <div id="postamble" class="status">
 <p class="date">Date: <span class="timestamp-wrapper"><span class="timestamp">&lt;2016-01-14 jeu.&gt;</span></span></p>
 <p class="author">Author: Christophe Pouzat</p>
-<p class="date">Created: 2016-01-14 jeu. 15:36</p>
+<p class="date">Created: 2016-01-14 jeu. 16:04</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
