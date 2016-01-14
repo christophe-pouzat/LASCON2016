@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2016-01-14 jeu. 11:22 -->
+<!-- 2016-01-14 jeu. 14:54 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="viewport" content="width=device-width, initial-scale=1" />
 <title>Origin Of The (High Frequency) Extra-cellular Signal</title>
@@ -177,7 +177,15 @@ for the JavaScript code in this tag.
 <li><a href="#orgheadline3">2.2. Membrane current density</a></li>
 </ul>
 </li>
-<li><a href="#orgheadline5">3. Numerical integration of the H &amp; H equation</a></li>
+<li><a href="#orgheadline7">3. Numerical integration of the H &amp; H equation</a>
+<ul>
+<li><a href="#orgheadline6">3.1. A standardized form for the non-linear reaction-diffusion equations</a>
+<ul>
+<li><a href="#orgheadline5">3.1.1. The heat equation</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </div>
 </div>
@@ -308,8 +316,8 @@ At that stage, in order to go further, we need an explicit expression or value f
 </div>
 </div>
 
-<div id="outline-container-orgheadline5" class="outline-2">
-<h2 id="orgheadline5"><span class="section-number-2">3</span> Numerical integration of the H &amp; H equation</h2>
+<div id="outline-container-orgheadline7" class="outline-2">
+<h2 id="orgheadline7"><span class="section-number-2">3</span> Numerical integration of the H &amp; H equation</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 We follow here the exposition of Tuckwell (1988) <i>Introduction to theoretical neurobiology. Volume 2.</i> CUP, pp 54-70. We want to solve the following set of equations:
@@ -323,15 +331,100 @@ We follow here the exposition of Tuckwell (1988) <i>Introduction to theoretical 
 \end{align}
 
 <p>
-where \(C_m\) is the membrane capacitance per unit area [F/cm\(^2\)]; \(\overline{g}_K\), \(\overline{g}_{Na}\) and \(g_l\) are the potassium, sodium and leak conductances per unit area [S/cm\(^2\)]; \(V_K\), \(V_{Na}\) and \(V_l\) are the potassium, sodium and leak currents reversal potentials and \(I_a\) is "externally" applied current per unit area [mA/cm\(^2\)]. 
+where \(C_m\) is the membrane capacitance per unit area [F/cm\(^2\)]; \(\overline{g}_K\), \(\overline{g}_{Na}\) and \(g_l\) are the potassium, sodium and leak conductances per unit area [S/cm\(^2\)]; \(V_K\), \(V_{Na}\) and \(V_l\) are the potassium, sodium and leak currents reversal potentials [mV] and \(I_a\) is "externally" applied current per unit area [mA/cm\(^2\)]. 
 </p>
+</div>
+
+<div id="outline-container-orgheadline6" class="outline-3">
+<h3 id="orgheadline6"><span class="section-number-3">3.1</span> A standardized form for the non-linear reaction-diffusion equations</h3>
+<div class="outline-text-3" id="text-3-1">
+<p>
+We will consider a <i>reaction-diffusion</i> system with the form:
+</p>
+
+\begin{align}
+    \mathbf{u}_t = \mathbf{D} \, \mathbf{u}_{xx} + \mathbf{F}(\mathbf{u}) \, , \label{eq:reaction-diffusion}\tag{15}
+\end{align}
+
+<p>
+where the \(t\) subscript stands for the partial derivative with respect to time, the \(xx\) subscripts stands for the second partial derivative with respect to position, \(\mathbf{u} = \left(u_1(x,t),\ldots,u_n(x,t)\right)^T \in \mathbb{R}^n\), \(\mathbf{D}\) is a diagonal \(n \times n\)  matrix of diffusion coefficients \(\left(D_1,\ldots,D_n\right)\) and \(\mathbf{F}(\cdot) = \left(F_1(\cdot),\ldots,F_n(\cdot)\right)^T\) is a vector-valued function. The corresponds with the above H &amp; H equations is obtained by setting: \(\mathbf{u} = \left(V_m,n,m,h\right)^T\); \(\left(D_1,D_2,D_3,D_4\right) = \left(\frac{a \sigma_i}{2 C_m},0,0,0\right)\), \(F_1(\mathbf{u}) = \overline{g}_K n^4 (V_K-V_m) + \overline{g}_{Na} m^3 h (V_{Na}-V_m) + g_l (V_l - V_m) + I_A\), \(F_2(\mathbf{u})\), \(F_3(\mathbf{u})\) and \(F_4(\mathbf{u})\) are given by equations 12, 13 and 14.   
+</p>
+</div>
+
+<div id="outline-container-orgheadline5" class="outline-4">
+<h4 id="orgheadline5"><span class="section-number-4">3.1.1</span> The heat equation</h4>
+<div class="outline-text-4" id="text-3-1-1">
+<p>
+Let us consider a simpler problem, the <i>heat equation</i>:
+</p>
+
+\begin{align}
+    u_t = D \, u_{xx} \, , \label{eq:heat-equation}\tag{16}
+\end{align}
+
+<p>
+where \(u(x,t)\) is a scalar. A numerical integration procedure is possible by <i>finite differencing</i>. Here, the heat equation (16) is replaced by a finite difference equation whose solution <i>approximates</i> the one of the heat equation. We discretize the \(x\) axis using \(m+1\) equally spaced points (with a step \(\Delta{}x\)) and the \(t\) axis using \(n+1\) equally spaced times (with a step \(\Delta{}t\)). We write the approximate solution as:
+</p>
+
+\begin{align}
+    U_{i,j} = u(i \Delta{}x,j \Delta{}t) \quad i = 0,\ldots,m \; i = 0,\ldots,n \, . \label{eq:discrete-u}\tag{17}
+\end{align}
+
+<p>
+The finite difference approximations of the required derivatives are:
+</p>
+
+\begin{align}
+    u_t(x,t) &\approx \frac{U_{i,j+1}-U_{i,j}}{\Delta{}t} \, , \label{eq:u_t}\tag{18} \\
+    u_x(x,t) &\approx \frac{U_{i+1,j}-U_{i,j}}{\Delta{}x} \, , \label{eq:u_x}\tag{19} \\
+    u_{xx}(x,t) &\approx \frac{u_x(x,t)-u_x(x-\Delta{}x,t)}{\Delta{}x} \, , \nonumber \\
+    &\approx \frac{U_{i+1,j}-2 \, U_{i,j} + U_{i-1,j}}{\Delta{}x^2} \, . \label{eq:u_xx}\tag{20} \\
+\end{align}
+
+<p>
+The numerical integration of the heat equation with the finite difference equation is obtained by establishing a relation between the \(U_{i,j+1}\) and the \(U_{i,j}\). One methods approximates the second spatial derivative at \(t\) by the one at \(t+\Delta{}t\) giving the scheme:
+</p>
+
+\begin{align}
+    \frac{U_{i,j+1}-U_{i,j}}{\Delta{}t} = \frac{D}{\Delta{}x^2} \left(U_{i+1,j+1}-2 \, U_{i,j+1} + U_{i-1,j+1}\right)\, . \label{eq:Ames-scheme}\tag{21} 
+\end{align}
+
+<p>
+Crank and Nicolson use the average of the approximations to the second space derivatives at the \(jth\) and \((j+1)th\) time points to get:
+</p>
+
+\begin{align}
+    \frac{U_{i,j+1}-U_{i,j}}{\Delta{}t} = \frac{D}{2 \Delta{}x^2} \left(U_{i+1,j+1}-2 \, U_{i,j+1} + U_{i-1,j+1} + U_{i+1,j}-2 \, U_{i,j} + U_{i-1,j}\right)\, . \label{eq:Crank-Nicolson}\tag{22} 
+\end{align}
+
+<p>
+More generally a weight factor \(\lambda\) can be used with weight \(\lambda\) for the \((j+1)th\) time points and weight \((1-\lambda)\) for the \(jth\) with \(0 \le \lambda \le 1\). Then with:
+</p>
+
+\begin{align}
+    r \doteq \frac{D \Delta{}t}{\Delta{}x^2} \, , \label{eq:step-ratio}\tag{23} 
+\end{align}
+
+<p>
+we have:
+</p>
+
+\begin{align}
+    -r \lambda U_{i-1,j+1} + (1+2 r \lambda) U_{i,j+1} -r \lambda U_{i+1,j+1} = r (1-\lambda) U_{i-1,j} + \left(1-2 r (1-\lambda)\right) U_{i,j} r (1-\lambda) U_{i+1,j}\, , \label{eq:general-Crank-Nicolson}\tag{23} 
+\end{align}
+
+<p>
+where all the unknown terms in \(j+1\) are on the left side. Since \(i = 0,1,\ldots,m\) there are \(m+1\) equations with \(m+1\) unknown. This integration scheme is called <i>implicit</i> because a linear system must be solved to obtain the values of \(u(x,t)\) at the next time step. The system defined by equation 23 is <i>tridiagonal</i> and can be solved without matrix inversion. In <code>Python</code>, the <a href="http://docs.scipy.org/doc/scipy/reference/tutorial/linalg.html">scipy.linalg</a> sub-module provides the <a href="http://docs.scipy.org/doc/scipy/reference/generated/scipy.linalg.solve_banded.html#scipy.linalg.solve_banded">solve_banded</a> function to work efficiently with linear systems exhibiting a banded structure. 
+</p>
+</div>
+</div>
 </div>
 </div>
 </div>
 <div id="postamble" class="status">
 <p class="date">Date: <span class="timestamp-wrapper"><span class="timestamp">&lt;2016-01-14 jeu.&gt;</span></span></p>
 <p class="author">Author: Christophe Pouzat</p>
-<p class="date">Created: 2016-01-14 jeu. 11:22</p>
+<p class="date">Created: 2016-01-14 jeu. 14:54</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

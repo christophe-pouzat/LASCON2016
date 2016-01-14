@@ -1,4 +1,4 @@
-#+OPTIONS: ':nil *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline
+#+OPTIONS: ':nil *:t -:t ::t <:t H:3 \n:nil ^:nil arch:headline
 #+OPTIONS: author:t c:nil creator:nil d:(not "LOGBOOK") date:t e:t
 #+OPTIONS: email:nil f:t inline:t num:t p:nil pri:nil prop:nil stat:t
 #+OPTIONS: tags:t tasks:t tex:t timestamp:t title:t toc:t todo:t |:t
@@ -119,3 +119,64 @@ We follow here the exposition of Tuckwell (1988) /Introduction to theoretical ne
 \end{align}
 
 where $C_m$ is the membrane capacitance per unit area [F/cm$^2$]; $\overline{g}_K$, $\overline{g}_{Na}$ and $g_l$ are the potassium, sodium and leak conductances per unit area [S/cm$^2$]; $V_K$, $V_{Na}$ and $V_l$ are the potassium, sodium and leak currents reversal potentials [mV] and $I_a$ is "externally" applied current per unit area [mA/cm$^2$]. 
+
+** A standardized form for the non-linear reaction-diffusion equations 
+
+We will consider a /reaction-diffusion/ system with the form:
+
+\begin{align}
+    \mathbf{u}_t = \mathbf{D} \, \mathbf{u}_{xx} + \mathbf{F}(\mathbf{u}) \, , \label{eq:reaction-diffusion}\tag{15}
+\end{align}
+
+where the $t$ subscript stands for the partial derivative with respect to time, the $xx$ subscripts stands for the second partial derivative with respect to position, $\mathbf{u} = \left(u_1(x,t),\ldots,u_n(x,t)\right)^T \in \mathbb{R}^n$, $\mathbf{D}$ is a diagonal $n \times n$  matrix of diffusion coefficients $\left(D_1,\ldots,D_n\right)$ and $\mathbf{F}(\cdot) = \left(F_1(\cdot),\ldots,F_n(\cdot)\right)^T$ is a vector-valued function. The corresponds with the above H & H equations is obtained by setting: $\mathbf{u} = \left(V_m,n,m,h\right)^T$; $\left(D_1,D_2,D_3,D_4\right) = \left(\frac{a \sigma_i}{2 C_m},0,0,0\right)$, $F_1(\mathbf{u}) = \overline{g}_K n^4 (V_K-V_m) + \overline{g}_{Na} m^3 h (V_{Na}-V_m) + g_l (V_l - V_m) + I_A$, $F_2(\mathbf{u})$, $F_3(\mathbf{u})$ and $F_4(\mathbf{u})$ are given by equations 12, 13 and 14.   
+
+*** The heat equation
+
+Let us consider a simpler problem, the /heat equation/:
+
+\begin{align}
+    u_t = D \, u_{xx} \, , \label{eq:heat-equation}\tag{16}
+\end{align}
+
+where $u(x,t)$ is a scalar. A numerical integration procedure is possible by /finite differencing/. Here, the heat equation (16) is replaced by a finite difference equation whose solution /approximates/ the one of the heat equation. We discretize the $x$ axis using $m+1$ equally spaced points (with a step $\Delta{}x$) and the $t$ axis using $n+1$ equally spaced times (with a step $\Delta{}t$). We write the approximate solution as:
+
+\begin{align}
+    U_{i,j} = u(i \Delta{}x,j \Delta{}t) \quad i = 0,\ldots,m \; i = 0,\ldots,n \, . \label{eq:discrete-u}\tag{17}
+\end{align}
+
+The finite difference approximations of the required derivatives are:
+
+\begin{align}
+    u_t(x,t) &\approx \frac{U_{i,j+1}-U_{i,j}}{\Delta{}t} \, , \label{eq:u_t}\tag{18} \\
+    u_x(x,t) &\approx \frac{U_{i+1,j}-U_{i,j}}{\Delta{}x} \, , \label{eq:u_x}\tag{19} \\
+    u_{xx}(x,t) &\approx \frac{u_x(x,t)-u_x(x-\Delta{}x,t)}{\Delta{}x} \, , \nonumber \\
+    &\approx \frac{U_{i+1,j}-2 \, U_{i,j} + U_{i-1,j}}{\Delta{}x^2} \, . \label{eq:u_xx}\tag{20} \\
+\end{align}
+ 
+The numerical integration of the heat equation with the finite difference equation is obtained by establishing a relation between the $U_{i,j+1}$ and the $U_{i,j}$. One methods approximates the second spatial derivative at $t$ by the one at $t+\Delta{}t$ giving the scheme:
+
+\begin{align}
+    \frac{U_{i,j+1}-U_{i,j}}{\Delta{}t} = \frac{D}{\Delta{}x^2} \left(U_{i+1,j+1}-2 \, U_{i,j+1} + U_{i-1,j+1}\right)\, . \label{eq:Ames-scheme}\tag{21} 
+\end{align}
+ 
+Crank and Nicolson use the average of the approximations to the second space derivatives at the $jth$ and $(j+1)th$ time points to get:
+
+\begin{align}
+    \frac{U_{i,j+1}-U_{i,j}}{\Delta{}t} = \frac{D}{2 \Delta{}x^2} \left(U_{i+1,j+1}-2 \, U_{i,j+1} + U_{i-1,j+1} + U_{i+1,j}-2 \, U_{i,j} + U_{i-1,j}\right)\, . \label{eq:Crank-Nicolson}\tag{22} 
+\end{align}
+
+More generally a weight factor $\lambda$ can be used with weight $\lambda$ for the $(j+1)th$ time points and weight $(1-\lambda)$ for the $jth$ with $0 \le \lambda \le 1$. Then with:
+
+\begin{align}
+    r \doteq \frac{D \Delta{}t}{\Delta{}x^2} \, , \label{eq:step-ratio}\tag{23} 
+\end{align}
+
+we have:
+
+\begin{align}
+    -r \lambda U_{i-1,j+1} + (1+2 r \lambda) U_{i,j+1} -r \lambda U_{i+1,j+1} = r (1-\lambda) U_{i-1,j} + \left(1-2 r (1-\lambda)\right) U_{i,j} r (1-\lambda) U_{i+1,j}\, , \label{eq:general-Crank-Nicolson}\tag{23} 
+\end{align}
+
+where all the unknown terms in $j+1$ are on the left side. Since $i = 0,1,\ldots,m$ there are $m+1$ equations with $m+1$ unknown. This integration scheme is called /implicit/ because a linear system must be solved to obtain the values of $u(x,t)$ at the next time step. The system defined by equation 23 is /tridiagonal/ and can be solved without matrix inversion. In =Python=, the [[http://docs.scipy.org/doc/scipy/reference/tutorial/linalg.html][scipy.linalg]] sub-module provides the [[http://docs.scipy.org/doc/scipy/reference/generated/scipy.linalg.solve_banded.html#scipy.linalg.solve_banded][solve_banded]] function to work efficiently with linear systems exhibiting a banded structure. 
+
+ 
