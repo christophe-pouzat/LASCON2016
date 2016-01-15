@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2016-01-15 ven. 15:49 -->
+<!-- 2016-01-15 ven. 18:06 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="viewport" content="width=device-width, initial-scale=1" />
 <title>Origin Of The (High Frequency) Extra-cellular Signal</title>
@@ -328,9 +328,9 @@ We follow here the exposition of Tuckwell (1988) <i>Introduction to theoretical 
 
 \begin{align}
     C_m \, \frac{\partial V_m}{\partial t} &= \frac{a \sigma_i}{2} \frac{\partial^2 V_m}{\partial x^2} + \overline{g}_K n^4 (V_K-V_m) + \overline{g}_{Na} m^3 h (V_{Na}-V_m) + g_l (V_l - V_m) + I_A \, , \label{eq:HH-PDE}\tag{11}\\
-    \frac{\partial n}{\partial t} &= \alpha_n (1-n) - \beta_n n \, , \label{eq:HH-n}\tag{12}\\
-    \frac{\partial m}{\partial t} &= \alpha_m (1-m) - \beta_m m \, , \label{eq:HH-m}\tag{13}\\
-    \frac{\partial h}{\partial t} &= \alpha_h (1-h) - \beta_h h \, , \label{eq:HH-h}\tag{14}
+    \frac{\partial n}{\partial t} &= \alpha_n(V_m) (1-n) - \beta_n(V_m) n \, , \label{eq:HH-n}\tag{12}\\
+    \frac{\partial m}{\partial t} &= \alpha_m(V_m) (1-m) - \beta_m(V_m) m \, , \label{eq:HH-m}\tag{13}\\
+    \frac{\partial h}{\partial t} &= \alpha_h(V_m) (1-h) - \beta_h(V_m) h \, , \label{eq:HH-h}\tag{14}
 \end{align}
 
 <p>
@@ -350,7 +350,7 @@ We will consider a <i>reaction-diffusion</i> system with the form:
 \end{align}
 
 <p>
-where the \(t\) subscript stands for the partial derivative with respect to time, the \(xx\) subscripts stands for the second partial derivative with respect to position, \(\mathbf{u} = \left(u_1(x,t),\ldots,u_n(x,t)\right)^T \in \mathbb{R}^n\), \(\mathbf{D}\) is a diagonal \(n \times n\)  matrix of diffusion coefficients \(\left(D_1,\ldots,D_n\right)\) and \(\mathbf{F}(\cdot) = \left(F_1(\cdot),\ldots,F_n(\cdot)\right)^T\) is a vector-valued function. The corresponds with the above H &amp; H equations is obtained by setting: \(\mathbf{u} = \left(V_m,n,m,h\right)^T\); \(\left(D_1,D_2,D_3,D_4\right) = \left(\frac{a \sigma_i}{2 C_m},0,0,0\right)\), \(F_1(\mathbf{u}) = \overline{g}_K n^4 (V_K-V_m) + \overline{g}_{Na} m^3 h (V_{Na}-V_m) + g_l (V_l - V_m) + I_A\), \(F_2(\mathbf{u})\), \(F_3(\mathbf{u})\) and \(F_4(\mathbf{u})\) are given by equations 12, 13 and 14.   
+where the \(t\) subscript stands for the partial derivative with respect to time, the \(xx\) subscripts stands for the second partial derivative with respect to position, \(\mathbf{u} = \left(u_1(x,t),\ldots,u_n(x,t)\right)^T \in \mathbb{R}^n\), \(\mathbf{D}\) is a diagonal \(n \times n\)  matrix of diffusion coefficients \(\left(D_1,\ldots,D_n\right)\) and \(\mathbf{F}(\cdot) = \left(F_1(\cdot),\ldots,F_n(\cdot)\right)^T\) is a vector-valued function. The corresponds with the above H &amp; H equations is obtained by setting: \(\mathbf{u} = \left(V_m,n,m,h\right)^T\); \(\left(D_1,D_2,D_3,D_4\right) = \left(\frac{a \sigma_i}{2 C_m},0,0,0\right)\), \(F_1(\mathbf{u}) = \left(\overline{g}_K n^4 (V_K-V_m) + \overline{g}_{Na} m^3 h (V_{Na}-V_m) + g_l (V_l - V_m) + I_A\right)/C_m\), \(F_2(\mathbf{u}) \equiv F_2(V_m,n)\), \(F_3(\mathbf{u}) \equiv F_3(V_m,m)\) and \(F_4(\mathbf{u}) \equiv F_4(V_m,h)\) are given by equations 12, 13 and 14.   
 </p>
 </div>
 
@@ -552,48 +552,80 @@ while for \(j=0\) we have:
 <div class="org-src-container">
 
 <pre class="src src-python" id="orgsrcblock1">def lees_method(radius_axon, axon_length, sim_time,
-                spatialNodes, temporalNodes, Iapp):
+                m, n, Iapp):
     """ Computes the spatiotemporal evolution of membrane potential of
-        a neurite (axon only).
+        an axon.
 
         Args:
             radius_axon (float): Radius of axon (in cm)
             axon_length (float): Length of axon (in cm)
-            sime_time (float): Total simulation time in (ms)
-            spatialNodes (int): Spatial discretization nodes
-            temporalNodes (int): Crank-Nicolson time step
+            sim_time (float): Total simulation time in (ms)
+            m (int): m+1 is the number of space steps
+            n (int): n+1 is the number of time steps
             Iapp (float): External input current intensity
 
         Returns:
-            VmA (float): A vector of spatiotempral evolution of axon's membrane
-                            potential (in mV)
+            VmA (float): A n+1 x m+1 array containing axon's membrane
+                            potential (in mV, deviation with respect to rest)
     """
     import numpy as np
     from scipy.linalg import solve_banded
-    # Activation functions
-    alpha_n = np.vectorize(lambda v: 0.01*(10.0 - v)/(np.exp((10.0-v)/10.0)-1.0)
-			if v != 10.0 else 0.1)
-    beta_n = lambda v: 0.125*np.exp(-0.0125*v)
-    n_inf = lambda v: alpha_n(v)/(alpha_n(v) + beta_n(v))
-    alpha_m = np.vectorize(lambda v: 0.1*(25.0 - v)/(np.exp((25.0 - v)/10.0)-1.0)
-			if v != 25.0 else 1)
-    beta_m = lambda v: 4*np.exp(-.0555*v)
-    m_inf = lambda v: alpha_m(v)/(alpha_m(v) + beta_m(v))
-    alpha_h = lambda v: 0.07*np.exp(-0.05*v)
-    beta_h = lambda v: 1.0/(np.exp((30.0 - v)/10.0) + 1.0)
-    h_inf = lambda v: alpha_h(v)/(alpha_h(v) + beta_h(v))
+    Cm = 1.0 # H &amp; H 1952 [μF / cm^2]
+    rho = 35.4 # H &amp; H 1952, rho is the inverse of σi [Ω cm]
+    D_axon = radius_axon / (2.0 * rho * Cm) # the "Diffusion" constant
+    # Activation functions taken from H &amp; H 1952
+    def alpha_n(v):
+        if np.abs(v-10.0) &lt; 1e-10:
+            return 0.1
+        else:
+            return 0.01*(10.0 - v)/(np.exp((10.0-v)/10.0)-1.0)
+    def beta_n(v):
+        return 0.125*np.exp(-0.0125*v)
+    n_inf = np.vectorize(lambda v: alpha_n(v)/(alpha_n(v) + beta_n(v)))
+    def F_n(v,n):
+        if np.abs(v-10.0) &lt; 1e-10:
+            alpha = 0.1
+        else:
+            alpha = 0.01*(10.0 - v)/(np.exp((10.0-v)/10.0)-1.0)
+        beta = 0.125*np.exp(-0.0125*v)
+        return alpha*(1-n)-beta*n
+    vF_n = np.vectorize(F_n)
+    def alpha_m(v):
+        if np.abs(v-25.0) &lt; 1e-10:
+            return 1.0
+        else:
+            return 0.1*(25.0 - v)/(np.exp((25.0 - v)/10.0)-1.0)
+    def beta_m(v):
+        return 4*np.exp(-.0555*v)
+    m_inf = np.vectorize(lambda v: alpha_m(v)/(alpha_m(v) + beta_m(v)))
+    def F_m(v,m):
+        if np.abs(v-25.0) &lt; 1e-10:
+            alpha = 1.0
+        else:
+            alpha =  0.1*(25.0 - v)/(np.exp((25.0 - v)/10.0)-1.0)
+        beta = 4*np.exp(-.0555*v)
+        return alpha*(1-m)-beta*m
+    vF_m = np.vectorize(F_m)
+    def alpha_h(v):
+        return 0.07*np.exp(-0.05*v)
+    def beta_h(v):
+        return 1.0/(np.exp((30.0 - v)/10.0) + 1.0)
+    h_inf = np.vectorize(lambda v: alpha_h(v)/(alpha_h(v) + beta_h(v)))
+    def F_h(v,h):
+        return 0.07*np.exp(-0.05*v)*(1-h)-1.0/(np.exp((30.0 - v)/10.0) + 1.0)*h
+    vFh = np.vectorize(F_h)
+    def F_V(v,n,m,h,Ia):
+        GNa, GK, GL = 120.0, 36.0, 0.3 # H &amp; H 1952
+        ENa, EK, EL = 115.0, -12.0, 10.613 # H &amp; H 1952
+        return (GK*n**4*(EK-v)+GNa*m**3*h*(ENa-v)+GL*(EL-v)+Ia)/Cm
+    vF_V = np.vectorize(F_V)
     # Simulation time and rod length
     time, axon_len = sim_time, axon_length
-    GNa, GK, GL = 120.0, 36.0, 0.3
-    ENa, EK, EL = 115.0, -12.0, 10.613
-    Cm = 1.0
-    rho = 35.4
-    D_axon = radius_axon / (2.0 * rho * Cm)
     # Mesh and time points
-    Nx, Nt = spatialNodes, temporalNodes
+    Nx, Nt = m, n
     # Compute mesh spacing and time step
     dxA, dt = axon_len/(Nx-1), time/(Nt-1)
-    # Compute the quantity αΔt/(2Δx²)
+    # Compute the quantity DΔt/(2Δx²)
     r_axon = D_axon * dt/(dxA**2)
     # Initialize solution arrays
     VA = np.zeros((Nt+1, Nx+1))
@@ -606,15 +638,15 @@ while for \(j=0\) we have:
     hAxon[0] = h_inf(VA[0, 1:-1])
     nAxon[0] = n_inf(VA[0, 1:-1])
     # Initialize the band matrix A (Ax = b)
-    axonD = np.zeros((Nx+1,))
-    axonL = np.zeros((Nx,))
-    axonU = np.zeros((Nx,))
+    axonD = np.zeros((Nx+1,)) # diagonal
+    axonL = np.zeros((Nx,)) # upper diagonal
+    axonU = np.zeros((Nx,)) # lower diagonal
     AB = np.zeros((3,Nx+1))
     # Fill in the band matrix A
-    axonL[:] = -r_axon
-    axonU[:] = -r_axon
-    axonD[:] = 1.0 + 2.0 * r_axon
-    axonD[0], axonD[Nx] = 1 + 2.0*r_axon, 1 + 2.0*r_axon
+    axonL[:] = -r_axon/2.0
+    axonU[:] = -r_axon/2.0
+    axonD[:] = 1.0 + r_axon
+    axonD[0], axonD[Nx] = 1 + r_axon, 1 + r_axon
     axonL[-1], axonU[0] = -r_axon, -r_axon
     AB[0,1:] = axonU
     AB[1,:] = axonD
@@ -624,17 +656,21 @@ while for \(j=0\) we have:
     # Applied current density
     Iext = np.zeros((Nt+1, Nx-1))
     Iext[0:10, :5] = Iapp
+    # The first time step is done with the explicit method
+    nAxon[1] = nAxon[0] + vF_n(VA[0, 1:-1],nAxon[0])*dt
+    mAxon[1] = mAxon[0] + vF_m(VA[0, 1:-1],mAxon[0])*dt
+    hAxon[1] = hAxon[0] + vF_h(VA[0, 1:-1],hAxon[0])*dt
     for i in range(1, Nt):
         # Compute the conductances for the axon
         gANa = GNa * (mAxon[i-1]**3) * hAxon[i-1]
         gAK = GK * (nAxon[i-1]**4)
         gAL = GL
         # Compute the kinetics (Forward Euler) for the axon
-        mAxon[i] = (mAxon[i-1] + dt*(alpha_m(VA[i-1, 1:-1])*(1 - mAxon[i-1]) -
+        mAxon[i,:] = (mAxon[i-1,:] + dt*(alpha_m(VA[i-1, 1:-1])*(1 - mAxon[i-1]) -
                                      beta_m(VA[i-1, 1:-1])*mAxon[i-1]))
-        nAxon[i] = (nAxon[i-1] + dt*(alpha_n(VA[i-1, 1:-1])*(1 - nAxon[i-1]) -
+        nAxon[i,:] = (nAxon[i-1,:] + dt*(alpha_n(VA[i-1, 1:-1])*(1 - nAxon[i-1]) -
                                      beta_n(VA[i-1, 1:-1])*nAxon[i-1]))
-        hAxon[i] = (hAxon[i-1] + dt*(alpha_h(VA[i-1, 1:-1])*(1 - hAxon[i-1]) -
+        hAxon[i,:] = (hAxon[i-1,:] + dt*(alpha_h(VA[i-1, 1:-1])*(1 - hAxon[i-1]) -
                                      beta_h(VA[i-1, 1:-1])*hAxon[i-1]))
         # Compute the B vector for the axon
         axonB[1:-1] = (r_axon * VA[i-1, :-2] +
@@ -669,7 +705,7 @@ while for \(j=0\) we have:
 <div id="postamble" class="status">
 <p class="date">Date: <span class="timestamp-wrapper"><span class="timestamp">&lt;2016-01-14 jeu.&gt;</span></span></p>
 <p class="author">Author: Christophe Pouzat</p>
-<p class="date">Created: 2016-01-15 ven. 15:49</p>
+<p class="date">Created: 2016-01-15 ven. 18:06</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
