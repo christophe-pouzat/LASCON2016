@@ -159,7 +159,7 @@ The numerical integration of the heat equation with the finite difference equati
     \frac{U_{i,j+1}-U_{i,j}}{\Delta{}t} = \frac{D}{\Delta{}x^2} \left(U_{i+1,j+1}-2 \, U_{i,j+1} + U_{i-1,j+1}\right)\, . \label{eq:Ames-scheme}\tag{21} 
 \end{align}
  
-Crank and Nicolson use the average of the approximations to the second space derivatives at the $jth$ and $(j+1)th$ time points to get:
+[[https://en.wikipedia.org/wiki/Crank–Nicolson_method][Crank and Nicolson]] used the average of the approximations to the second space derivatives at the $jth$ and $(j+1)th$ time points to get:
 
 \begin{align}
     \frac{U_{i,j+1}-U_{i,j}}{\Delta{}t} = \frac{D}{2 \Delta{}x^2} \left(U_{i+1,j+1}-2 \, U_{i,j+1} + U_{i-1,j+1} + U_{i+1,j}-2 \, U_{i,j} + U_{i-1,j}\right)\, . \label{eq:Crank-Nicolson}\tag{22} 
@@ -199,6 +199,75 @@ And Lees' modification of the Crank-Nicolson method gives the tridiagonal system
 \begin{align}
     -\frac{r}{2} U_{i-1,j+1} + (1+r) U_{i,j+1} -\frac{r}{2} U_{i+1,j+1} = \frac{r}{2} U_{i-1,j} + (1-r) U_{i,j} + \frac{r}{2}U_{i+1,j} + \Delta{}t F\left(\frac{3}{2} U_{i,j} - \frac{1}{2} U_{i,j-1}\right)\, . \label{eq:Lees-method}\tag{26} 
 \end{align}
+
+Clearly this last equation can only be used if $j>0$ so for $j=0$ we use an /explicit/ version (we use $j$ instead of $j+1$ in the right hand side of equation 21):
+
+\begin{align}
+    U_{i,1} = r \left(U_{i-1,0} -2 U_{i,0} + U_{i+1,0}\right) + \Delta{}t F\left(U_{i,0}\right) + U_{i,0}\, . \label{eq:Lees-method-explicit}\tag{27} 
+\end{align}
+
+*** Boundary conditions
+
+There is still one problem to consider before starting writing our code: the /boundary conditions/, that is what happens at the ends of the cable. There two "extreme" possibilities (and a third one in between the two). The first possibility consists in imposing the voltage at both ends, this leads to the /Dirichlet conditions/:
+
+\begin{align}
+    u(0,t) &= \alpha \, ,  \label{eq:Dirichlet-0}\tag{28} \\
+    u(L,t) &= \beta   \, . \label{eq:Dirichlet-L}\tag{29}
+\end{align}
+
+The finite difference version is:
+
+\begin{align}
+    U_{0,j} &= \alpha \, , \quad j=0,1,\ldots  \, , \label{eq:Dirichlet-0-discrete}\tag{30} \\
+    U_{m,j} &= \beta \, , \quad j=0,1,\ldots   \, . \label{eq:Dirichlet-L-discrete}\tag{31}
+\end{align}
+
+These conditions reduce the number of unknown in our linear system by 2, from $m+1$ to $m-1$ and correspond to voltage-clamping the ends of the cable.
+
+The more common conditions in simulation studies are the /Neumann conditions/ where the values of the space derivatives of the potential are imposed at the ends:
+
+\begin{align}
+    u_x(0,t) &= \alpha \, ,  \label{eq:Neumann-0}\tag{32} \\
+    u_x(L,t) &= \beta   \, . \label{eq:Neumann-L}\tag{33}
+\end{align}
+
+The common values chosen are $\alpha = \beta = 0$ often referred to as the "sealed ends" conditions---the ones we are going to choose in our numerical implementation. To get the finite difference version, a quick solution would be using $u_x(x,t) \approx \left(U_{i+1,j}-U_{i,j}\right) / \Delta{}x$, but we can do better---in term of the approximation of the space derivative by its finite difference version at fixed $\Delta{}x$ using:
+
+\begin{align}
+    u_x(i \Delta{}x,j \Delta{}t) &\approx \frac{U_{i+1,j} - U_{i-1,j}}{2 \Delta{}x}   \, . \label{eq:central-difference}\tag{34}
+\end{align}
+
+Can you see why? Then the Neumann conditions become:
+
+\begin{align}
+    U_{-1,j} &= -2 \alpha \Delta{}x + U_{1,j}\, ,  \label{eq:Neumann-0-discrete}\tag{35} \\
+    U_{m+1,j} &= 2 \beta \Delta{}x + U_{m-1,j}  \, . \label{eq:Neumann-L-discrete}\tag{36}
+\end{align}
+
+This amounts to introducing "false boundaries" and substituting 35 in 26, the first equation becomes (for $j>0$):
+
+\begin{align}
+     (1+r) U_{0,j+1} -r U_{1,j+1} = - 2 r \alpha \Delta{}x + (1-r) U_{0,j} + r U_{1,j} + \Delta{}t F\left(\frac{3}{2} U_{0,j} - \frac{1}{2} U_{0,j-1}\right)\, . \label{eq:Lees-left}\tag{37} 
+\end{align}
+ 
+At $j=0$ the substitution in equation 27 leads to:
+
+\begin{align}
+     U_{0,1} = 2 r \left(U_{1,0} - U_{0,0} - \alpha \Delta{}x\right) + \Delta{}t F\left(U_{0,0}\right) + U_{0,0}\, . \label{eq:Lees-left-at-0}\tag{38} 
+\end{align}
+
+At the other end we get for $j>0$:
+
+\begin{align}
+     -r U_{m-1,j+1} + (1+r) U_{m,j+1} = 2 r \beta \Delta{}x + r U_{m-1,j} + (1-r) U_{m,j} + \Delta{}t F\left(\frac{3}{2} U_{m,j} - \frac{1}{2} U_{m,j-1}\right)\, , \label{eq:Lees-right}\tag{39} 
+\end{align}
+
+while for $j=0$ we have:
+
+\begin{align}
+     U_{m,1} = 2 r \left(U_{m-1,0} - U_{m,0} + \beta \Delta{}x\right) + \Delta{}t F\left(U_{m,0}\right) + U_{m,0}\, . \label{eq:Lees-right-at-0}\tag{40} 
+\end{align}
+
  
 *** Python code doing the job
 

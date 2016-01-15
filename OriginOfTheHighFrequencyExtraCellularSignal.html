@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2016-01-14 jeu. 16:22 -->
+<!-- 2016-01-15 ven. 15:49 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="viewport" content="width=device-width, initial-scale=1" />
 <title>Origin Of The (High Frequency) Extra-cellular Signal</title>
@@ -177,13 +177,14 @@ for the JavaScript code in this tag.
 <li><a href="#orgheadline3">2.2. Membrane current density</a></li>
 </ul>
 </li>
-<li><a href="#orgheadline9">3. Numerical integration of the H &amp; H equation</a>
+<li><a href="#orgheadline10">3. Numerical integration of the H &amp; H equation</a>
 <ul>
-<li><a href="#orgheadline8">3.1. A standardized form for the non-linear reaction-diffusion equations</a>
+<li><a href="#orgheadline9">3.1. A standardized form for the non-linear reaction-diffusion equations</a>
 <ul>
 <li><a href="#orgheadline5">3.1.1. The heat equation</a></li>
 <li><a href="#orgheadline6">3.1.2. Adding the reaction term: Lee's method</a></li>
-<li><a href="#orgheadline7">3.1.3. Python code doing the job</a></li>
+<li><a href="#orgheadline7">3.1.3. Boundary conditions</a></li>
+<li><a href="#orgheadline8">3.1.4. Python code doing the job</a></li>
 </ul>
 </li>
 </ul>
@@ -318,8 +319,8 @@ At that stage, in order to go further, we need an explicit expression or value f
 </div>
 </div>
 
-<div id="outline-container-orgheadline9" class="outline-2">
-<h2 id="orgheadline9"><span class="section-number-2">3</span> Numerical integration of the H &amp; H equation</h2>
+<div id="outline-container-orgheadline10" class="outline-2">
+<h2 id="orgheadline10"><span class="section-number-2">3</span> Numerical integration of the H &amp; H equation</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 We follow here the exposition of Tuckwell (1988) <i>Introduction to theoretical neurobiology. Volume 2.</i> CUP, pp 54-70. We want to solve the following set of equations:
@@ -337,8 +338,8 @@ where \(C_m\) is the membrane capacitance per unit area [F/cm\(^2\)]; \(\overlin
 </p>
 </div>
 
-<div id="outline-container-orgheadline8" class="outline-3">
-<h3 id="orgheadline8"><span class="section-number-3">3.1</span> A standardized form for the non-linear reaction-diffusion equations</h3>
+<div id="outline-container-orgheadline9" class="outline-3">
+<h3 id="orgheadline9"><span class="section-number-3">3.1</span> A standardized form for the non-linear reaction-diffusion equations</h3>
 <div class="outline-text-3" id="text-3-1">
 <p>
 We will consider a <i>reaction-diffusion</i> system with the form:
@@ -392,7 +393,7 @@ The numerical integration of the heat equation with the finite difference equati
 \end{align}
 
 <p>
-Crank and Nicolson use the average of the approximations to the second space derivatives at the \(jth\) and \((j+1)th\) time points to get:
+<a href="https://en.wikipedia.org/wiki/Crank%E2%80%93Nicolson_method">Crank and Nicolson</a> used the average of the approximations to the second space derivatives at the \(jth\) and \((j+1)th\) time points to get:
 </p>
 
 \begin{align}
@@ -448,12 +449,106 @@ And Lees' modification of the Crank-Nicolson method gives the tridiagonal system
 \begin{align}
     -\frac{r}{2} U_{i-1,j+1} + (1+r) U_{i,j+1} -\frac{r}{2} U_{i+1,j+1} = \frac{r}{2} U_{i-1,j} + (1-r) U_{i,j} + \frac{r}{2}U_{i+1,j} + \Delta{}t F\left(\frac{3}{2} U_{i,j} - \frac{1}{2} U_{i,j-1}\right)\, . \label{eq:Lees-method}\tag{26} 
 \end{align}
+
+<p>
+Clearly this last equation can only be used if \(j>0\) so for \(j=0\) we use an <i>explicit</i> version (we use \(j\) instead of \(j+1\) in the right hand side of equation 21):
+</p>
+
+\begin{align}
+    U_{i,1} = r \left(U_{i-1,0} -2 U_{i,0} + U_{i+1,0}\right) + \Delta{}t F\left(U_{i,0}\right) + U_{i,0}\, . \label{eq:Lees-method-explicit}\tag{27} 
+\end{align}
 </div>
 </div>
 
 <div id="outline-container-orgheadline7" class="outline-4">
-<h4 id="orgheadline7"><span class="section-number-4">3.1.3</span> Python code doing the job</h4>
+<h4 id="orgheadline7"><span class="section-number-4">3.1.3</span> Boundary conditions</h4>
 <div class="outline-text-4" id="text-3-1-3">
+<p>
+There is still one problem to consider before starting writing our code: the <i>boundary conditions</i>, that is what happens at the ends of the cable. There two "extreme" possibilities (and a third one in between the two). The first possibility consists in imposing the voltage at both ends, this leads to the <i>Dirichlet conditions</i>:
+</p>
+
+\begin{align}
+    u(0,t) &= \alpha \, ,  \label{eq:Dirichlet-0}\tag{28} \\
+    u(L,t) &= \beta   \, . \label{eq:Dirichlet-L}\tag{29}
+\end{align}
+
+<p>
+The finite difference version is:
+</p>
+
+\begin{align}
+    U_{0,j} &= \alpha \, , \quad j=0,1,\ldots  \, , \label{eq:Dirichlet-0-discrete}\tag{30} \\
+    U_{m,j} &= \beta \, , \quad j=0,1,\ldots   \, . \label{eq:Dirichlet-L-discrete}\tag{31}
+\end{align}
+
+<p>
+These conditions reduce the number of unknown in our linear system by 2, from \(m+1\) to \(m-1\) and correspond to voltage-clamping the ends of the cable.
+</p>
+
+<p>
+The more common conditions in simulation studies are the <i>Neumann conditions</i> where the values of the space derivatives of the potential are imposed at the ends:
+</p>
+
+\begin{align}
+    u_x(0,t) &= \alpha \, ,  \label{eq:Neumann-0}\tag{32} \\
+    u_x(L,t) &= \beta   \, . \label{eq:Neumann-L}\tag{33}
+\end{align}
+
+<p>
+The common values chosen are \(\alpha = \beta = 0\) often referred to as the "sealed ends" conditions&#x2014;the ones we are going to choose in our numerical implementation. To get the finite difference version, a quick solution would be using \(u_x(x,t) \approx \left(U_{i+1,j}-U_{i,j}\right) / \Delta{}x\), but we can do better&#x2014;in term of the approximation of the space derivative by its finite difference version at fixed \(\Delta{}x\) using:
+</p>
+
+\begin{align}
+    u_x(i \Delta{}x,j \Delta{}t) &\approx \frac{U_{i+1,j} - U_{i-1,j}}{2 \Delta{}x}   \, . \label{eq:central-difference}\tag{34}
+\end{align}
+
+<p>
+Can you see why? Then the Neumann conditions become:
+</p>
+
+\begin{align}
+    U_{-1,j} &= -2 \alpha \Delta{}x + U_{1,j}\, ,  \label{eq:Neumann-0-discrete}\tag{35} \\
+    U_{m+1,j} &= 2 \beta \Delta{}x + U_{m-1,j}  \, . \label{eq:Neumann-L-discrete}\tag{36}
+\end{align}
+
+<p>
+This amounts to introducing "false boundaries" and substituting 35 in 26, the first equation becomes (for \(j>0\)):
+</p>
+
+\begin{align}
+     (1+r) U_{0,j+1} -r U_{1,j+1} = - 2 r \alpha \Delta{}x + (1-r) U_{0,j} + r U_{1,j} + \Delta{}t F\left(\frac{3}{2} U_{0,j} - \frac{1}{2} U_{0,j-1}\right)\, . \label{eq:Lees-left}\tag{37} 
+\end{align}
+
+<p>
+At \(j=0\) the substitution in equation 27 leads to:
+</p>
+
+\begin{align}
+     U_{0,1} = 2 r \left(U_{1,0} - U_{0,0} - \alpha \Delta{}x\right) + \Delta{}t F\left(U_{0,0}\right) + U_{0,0}\, . \label{eq:Lees-left-at-0}\tag{38} 
+\end{align}
+
+<p>
+At the other end we get for \(j>0\):
+</p>
+
+\begin{align}
+     -r U_{m-1,j+1} + (1+r) U_{m,j+1} = 2 r \beta \Delta{}x + r U_{m-1,j} + (1-r) U_{m,j} + \Delta{}t F\left(\frac{3}{2} U_{m,j} - \frac{1}{2} U_{m,j-1}\right)\, , \label{eq:Lees-right}\tag{39} 
+\end{align}
+
+<p>
+while for \(j=0\) we have:
+</p>
+
+\begin{align}
+     U_{m,1} = 2 r \left(U_{m-1,0} - U_{m,0} + \beta \Delta{}x\right) + \Delta{}t F\left(U_{m,0}\right) + U_{m,0}\, . \label{eq:Lees-right-at-0}\tag{40} 
+\end{align}
+</div>
+</div>
+
+
+<div id="outline-container-orgheadline8" class="outline-4">
+<h4 id="orgheadline8"><span class="section-number-4">3.1.4</span> Python code doing the job</h4>
+<div class="outline-text-4" id="text-3-1-4">
 <div class="org-src-container">
 
 <pre class="src src-python" id="orgsrcblock1">def lees_method(radius_axon, axon_length, sim_time,
@@ -574,7 +669,7 @@ And Lees' modification of the Crank-Nicolson method gives the tridiagonal system
 <div id="postamble" class="status">
 <p class="date">Date: <span class="timestamp-wrapper"><span class="timestamp">&lt;2016-01-14 jeu.&gt;</span></span></p>
 <p class="author">Author: Christophe Pouzat</p>
-<p class="date">Created: 2016-01-14 jeu. 16:22</p>
+<p class="date">Created: 2016-01-15 ven. 15:49</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
