@@ -270,7 +270,17 @@ while for $j=0$ we have:
 
  
 *** Python code doing the job
-We are going to solve the standard H & H model using the Neumann boundary conditions with $\alpha = \beta = 0$ ("sealed ends"). We start by assigning few variables considering an axon with a radius $a$ of 1 $\mu{}m$ that is $10^{-4}$ cm:
+We are going to solve the standard H & H model using the Neumann boundary conditions with $\alpha = \beta = 0$ ("sealed ends"). We start by an =IPython= session loading the two main modules we are going on a regular basis, =numpy= and =pylab= a sub-module of =matplotlib=:
+
+#+NAME+: start-session
+#+BEGIN_SRC python :eval no-export :results silent
+import numpy as np
+import matplotlib.pylab as plt
+plt.ion()
+plt.style.use('ggplot')
+#+END_SRC
+
+The two last commands gives us /interactive/ graphics (=plt.ion=) and a nicer default style for the graphs (=plt.style.use('ggplot')=). We then assign a few variables considering an axon with a radius $a$ of 1 $\mu{}m$ that is $10^{-4}$ cm:
 
 #+NAME: assign-a-axon-radius
 #+BEGIN_SRC python :eval no-export :results silent
@@ -278,11 +288,15 @@ a = 1e-4
 #+END_SRC
 
 #+NAME: Cm-rho-D-definition
-#+BEGIN_SRC python :eval no-export :results silent
+#+BEGIN_SRC python :eval no-export :exports both
 Cm = 1.0 # H & H 1952 [μF / cm^2]
 rho = 35.4 # H & H 1952, rho is the inverse of σi [Ω cm]
 D = a / (2.0 * rho * Cm) # the "Diffusion" constant
+D
 #+END_SRC 
+
+#+RESULTS: Cm-rho-D-definition
+: 1.4124293785310736e-06
 
 Notice that with this choice of units =D= is measured in cm$^2$ / $\mu{}s$. We define next, for each activation variable, $n, m, h$ the $\alpha(v)$ and $\beta(v)$ functions---where the formal parameter $v$ stands for the *deviation of the membrane voltage with respect to rest*---as well as a function returning the steady-state value of the variable at a given voltage. We start with the $n$ activation variable assuming that the =numpy= module has been previously imported with the alias =np= (=import numpy as np=):
 
@@ -298,7 +312,28 @@ def beta_n(v):
 n_inf = np.vectorize(lambda v: alpha_n(v)/(alpha_n(v) + beta_n(v)))
 #+END_SRC
 
-Notice that we took care of the special case $v=10$ using the limit to avoid the undefined expression $0/0$. The =n_inf= function has been defined in a [[http://docs.scipy.org/doc/numpy/reference/generated/numpy.vectorize.html#numpy.vectorize][vectorized form]] since our definition of =alpha_n= works only with scalar arguments. We can now define function =F_n= corresponding to the $F_2$ of equation 15 whose expression is given by equation 12; this function takes two formal parameters: the membrane potential (deviation) =v= and the activation variable =n=:
+Notice that we took care of the special case $v=10$ using the limit to avoid the undefined expression $0/0$. The =n_inf= function has been defined in a [[http://docs.scipy.org/doc/numpy/reference/generated/numpy.vectorize.html#numpy.vectorize][vectorized form]] since our definition of =alpha_n= works only with scalar arguments. Having defined these functions it is always a good idea to make a couple of graphs to make sure that we did things properly (we should get figures 4 and 5, p 511 of H & H 1952; /don't forget that the membrane voltage convention at that time was the opposite of the one now used/):
+
+#+NAME: graph-n-activation
+#+BEGIN_SRC python :eval no-export :results silent
+vv = np.linspace(-50,110,201)
+plt.plot(vv,np.vectorize(alpha_n)(vv),lw=2)
+plt.plot(vv,np.vectorize(beta_n)(vv),lw=2)
+plt.plot(vv,n_inf(vv),lw=2)
+#+END_SRC
+
+#+NAME: save-graph-n-activation
+#+BEGIN_SRC python :eval no-exports :results file :exports results
+plt.savefig('figsL1/n_activation.png')
+plt.close()
+'figsL1/n_activation.png'
+#+END_SRC
+
+#+CAPTION: $\alpha_n$ (red), $\beta_n$ (blue) and $n_{\infty}$ (violet) as a function of the membrane voltage deviation with respect to rest. 
+#+RESULTS: save-graph-n-activation
+[[file:figsL1/n_activation.png]]
+
+We can now define function =F_n= corresponding to the $F_2$ of equation 15 whose expression is given by equation 12; this function takes two formal parameters: the membrane potential (deviation) =v= and the activation variable =n=:
 
 #+NAME: F_n-and-vF_n-definitions 
 #+BEGIN_SRC python :eval no-export :results silent
@@ -312,6 +347,24 @@ def F_n(v,n):
 vF_n = np.vectorize(F_n)    
 #+END_SRC
  
+It is again a good idea to use these newly defined functions to make sure that nothing "too pathological" happens:
+
+#+NAME: call-F_n
+#+BEGIN_SRC python :eval no-export :exports both
+F_n(20,0.6)
+#+END_SRC
+
+#+RESULTS: call-F_n
+: 0.0048690095444177128
+
+#+NAME: call-vF_n
+#+BEGIN_SRC python :eval no-export :exports both
+vF_n([-10,0,10,20,30],[0.1,0.2,0.3,0.4,0.5])
+#+END_SRC
+
+#+RESULTS: call-vF_n
+: array([ 0.01400882,  0.02155814,  0.03690637,  0.05597856,  0.07269618])
+
 Notice that we "redefine" =alpha_n= and =beta_n= inside =F_n=, this to gain time avoiding function calls. We also define a vectorized version =vF_n= that will take two formal parameters, =v= and =n=, that can be vectors. We proceed in the same way with the $m$ activation variable:
 
 #+NAME: m-activation
@@ -326,6 +379,18 @@ def beta_m(v):
 m_inf = np.vectorize(lambda v: alpha_m(v)/(alpha_m(v) + beta_m(v)))
 #+END_SRC
 
+The graphs (not shown) giving figures 7 and 8 pp 515-516 are obtained with:
+
+#+NAME: graph-m-activation
+#+BEGIN_SRC python :eval no-export :results silent
+vv = np.linspace(-50,110,201)
+plt.plot(vv,np.vectorize(alpha_m)(vv),lw=2)
+plt.plot(vv,np.vectorize(beta_m)(vv),lw=2)
+plt.plot(vv,m_inf(vv)*10,lw=2)
+plt.xlim(-10,110)
+plt.ylim(0,10)
+#+END_SRC
+
 #+NAME: F_m-and-vF_m-definitions 
 #+BEGIN_SRC python :eval no-export :results silent
 def F_m(v,m):
@@ -337,6 +402,16 @@ def F_m(v,m):
     return alpha*(1-m)-beta*m
 vF_m = np.vectorize(F_m)
 #+END_SRC
+
+A quick check gives:
+
+#+NAME: call-vF_m
+#+BEGIN_SRC python :eval no-export :exports both
+vF_m([-10,0,10,20,30],[0.1,0.2,0.3,0.4,0.5])
+#+END_SRC
+
+#+RESULTS: call-vF_m
+: array([-0.59869277, -0.62114902, -0.38730895, -0.06484611,  0.2569922 ])
 
 And for the $h$ activation variable:
 
@@ -350,7 +425,15 @@ def h_inf(v):
     return alpha_h(v)/(alpha_h(v) + beta_h(v))
 #+END_SRC
 
-Notice that since =alpha_h= is already (implicitly) vectorized, there is no need to use =np.vectorize= when defining function =h_inf=.
+Notice that since =alpha_h= is already (implicitly) vectorized, there is no need to use =np.vectorize= when defining function =h_inf=. The graphs (not shown) giving figures 9 and 10 pp 517-518 are obtained with:
+
+#+NAME: graph-h-activation
+#+BEGIN_SRC python :eval no-export :results silent
+vv = np.linspace(-50,110,201)
+plt.plot(vv,np.vectorize(alpha_h)(vv),lw=2)
+plt.plot(vv,np.vectorize(beta_h)(vv),lw=2)
+plt.plot(vv,h_inf(vv),lw=2)
+#+END_SRC
 
 #+NAME: F_h-and-vF_h-definitions 
 #+BEGIN_SRC python :eval no-export :results silent
@@ -358,6 +441,16 @@ def F_h(v,h):
     return 0.07*np.exp(-0.05*v)*(1-h)-1.0/(np.exp((30.0 - v)/10.0) + 1.0)*h
 vF_h = np.vectorize(F_h)
 #+END_SRC
+
+A quick check gives:
+
+#+NAME: call-vF_h
+#+BEGIN_SRC python :eval no-export :exports both
+vF_h([-10,0,10,20,30],[0.1,0.2,0.3,0.4,0.5])
+#+END_SRC
+
+#+RESULTS: call-vF_h
+: array([ 0.10207082,  0.04651483, -0.00604087, -0.09212563, -0.24219044])
 
 We define next =F_V= corresponding to the $F_1$ of equation 15. This function takes 5 formal parameters: =v=, =n=, =m=, =h= and =Ia= the injected current. The maximal conductances [mS / cm$^2$] and reversal potentials [mV] from H & H (1952) are assigned to local variables in the function. A vectorized version is also defined:
 
@@ -370,6 +463,30 @@ def F_V(v,n,m,h,Ia):
 vF_V = np.vectorize(F_V)
 #+END_SRC
 
+We can now make a first (explicit) step. We are going to consider a thin cable with a 1 $\mu{}m$ radius and we start by getting its length constant: $\lambda = \sqrt{a/2 \rho_i \sigma_m}$. We already set $\rho_i = 35.4$ [$\Omega{}$ cm], we get the resting value of $\sigma_m$ [S / cm$^2$] by getting the activation variables values at resting level (don't forget that the conductance densities given by H & H are in [mS]):
+
+#+NAME: sigma_m_rest
+#+BEGIN_SRC python :eval no-export :exports both
+sigma_m_rest = (36*n_inf(0)**4+120*m_inf(0)**3*h_inf(0)+0.3)/1000
+sigma_m_rest
+#+END_SRC
+
+#+RESULTS: sigma_m_rest
+: 0.00067725364844574128
+
+This gives us a length constant at rest in cm:
+
+#+NAME: lambda_rest
+#+BEGIN_SRC python :eval no-export :exports both
+lambda_rest = np.sqrt(1e-4/2/rho/sigma_m_rest)
+lambda_rest
+#+END_SRC
+
+#+RESULTS: lambda_rest
+: 0.045667548060889344
+
+So our length constant is roughly 500 $\mu{}m$.
+ 
 #+NAME: lees_method-definition
 #+BEGIN_SRC python :eval no-export :results silent :noweb yes
 def lees_method(a, axon_length, sim_time,

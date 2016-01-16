@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2016-01-16 sam. 10:53 -->
+<!-- 2016-01-16 sam. 13:05 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="viewport" content="width=device-width, initial-scale=1" />
 <title>Origin Of The (High Frequency) Extra-cellular Signal</title>
@@ -550,7 +550,20 @@ while for \(j=0\) we have:
 <h4 id="orgheadline8"><span class="section-number-4">3.1.4</span> Python code doing the job</h4>
 <div class="outline-text-4" id="text-3-1-4">
 <p>
-We are going to solve the standard H &amp; H model using the Neumann boundary conditions with \(\alpha = \beta = 0\) ("sealed ends"). We start by assigning few variables considering an axon with a radius \(a\) of 1 \(\mu{}m\) that is \(10^{-4}\) cm:
+We are going to solve the standard H &amp; H model using the Neumann boundary conditions with \(\alpha = \beta = 0\) ("sealed ends"). We start by an <code>IPython</code> session loading the two main modules we are going on a regular basis, <code>numpy</code> and <code>pylab</code> a sub-module of <code>matplotlib</code>:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python">import numpy as np
+import matplotlib.pylab as plt
+plt.ion()
+plt.style.use('ggplot')
+</pre>
+</div>
+
+<p>
+The two last commands gives us <i>interactive</i> graphics (<code>plt.ion</code>) and a nicer default style for the graphs (<code>plt.style.use('ggplot')</code>). We then assign a few variables considering an axon with a radius \(a\) of 1 \(\mu{}m\) that is \(10^{-4}\) cm:
 </p>
 
 <div class="org-src-container">
@@ -564,8 +577,13 @@ We are going to solve the standard H &amp; H model using the Neumann boundary co
 <pre class="src src-python" id="orgsrcblock2">Cm = 1.0 # H &amp; H 1952 [μF / cm^2]
 rho = 35.4 # H &amp; H 1952, rho is the inverse of σi [Ω cm]
 D = a / (2.0 * rho * Cm) # the "Diffusion" constant
+D
 </pre>
 </div>
+
+<pre class="example">
+1.4124293785310736e-06
+</pre>
 
 <p>
 Notice that with this choice of units <code>D</code> is measured in cm\(^2\) / \(\mu{}s\). We define next, for each activation variable, \(n, m, h\) the \(\alpha(v)\) and \(\beta(v)\) functions&#x2014;where the formal parameter \(v\) stands for the <b>deviation of the membrane voltage with respect to rest</b>&#x2014;as well as a function returning the steady-state value of the variable at a given voltage. We start with the \(n\) activation variable assuming that the <code>numpy</code> module has been previously imported with the alias <code>np</code> (<code>import numpy as np</code>):
@@ -585,12 +603,32 @@ n_inf = np.vectorize(lambda v: alpha_n(v)/(alpha_n(v) + beta_n(v)))
 </div>
 
 <p>
-Notice that we took care of the special case \(v=10\) using the limit to avoid the undefined expression \(0/0\). The <code>n_inf</code> function has been defined in a <a href="http://docs.scipy.org/doc/numpy/reference/generated/numpy.vectorize.html#numpy.vectorize">vectorized form</a> since our definition of <code>alpha_n</code> works only with scalar arguments. We can now define function <code>F_n</code> corresponding to the \(F_2\) of equation 15 whose expression is given by equation 12; this function takes two formal parameters: the membrane potential (deviation) <code>v</code> and the activation variable <code>n</code>:
+Notice that we took care of the special case \(v=10\) using the limit to avoid the undefined expression \(0/0\). The <code>n_inf</code> function has been defined in a <a href="http://docs.scipy.org/doc/numpy/reference/generated/numpy.vectorize.html#numpy.vectorize">vectorized form</a> since our definition of <code>alpha_n</code> works only with scalar arguments. Having defined these functions it is always a good idea to make a couple of graphs to make sure that we did things properly (we should get figures 4 and 5, p 511 of H &amp; H 1952; <i>don't forget that the membrane voltage convention at that time was the opposite of the one now used</i>):
 </p>
 
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock4">def F_n(v,n):
+<pre class="src src-python" id="orgsrcblock4">vv = np.linspace(-50,110,201)
+plt.plot(vv,np.vectorize(alpha_n)(vv),lw=2)
+plt.plot(vv,np.vectorize(beta_n)(vv),lw=2)
+plt.plot(vv,n_inf(vv),lw=2)
+</pre>
+</div>
+
+
+<div class="figure">
+<p><img src="figsL1/n_activation.png" alt="n_activation.png" />
+</p>
+<p><span class="figure-number">Figure 1:</span> \(\alpha_n\) (red), \(\beta_n\) (blue) and \(n_{\infty}\) (violet) as a function of the membrane voltage deviation with respect to rest.</p>
+</div>
+
+<p>
+We can now define function <code>F_n</code> corresponding to the \(F_2\) of equation 15 whose expression is given by equation 12; this function takes two formal parameters: the membrane potential (deviation) <code>v</code> and the activation variable <code>n</code>:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock5">def F_n(v,n):
     if np.abs(v-10.0) &lt; 1e-10:
         alpha = 0.1
     else:
@@ -602,12 +640,36 @@ vF_n = np.vectorize(F_n)
 </div>
 
 <p>
+It is again a good idea to use these newly defined functions to make sure that nothing "too pathological" happens:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock6">F_n(20,0.6)
+</pre>
+</div>
+
+<pre class="example">
+0.0048690095444177128
+</pre>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock7">vF_n([-10,0,10,20,30],[0.1,0.2,0.3,0.4,0.5])
+</pre>
+</div>
+
+<pre class="example">
+array([ 0.01400882,  0.02155814,  0.03690637,  0.05597856,  0.07269618])
+</pre>
+
+<p>
 Notice that we "redefine" <code>alpha_n</code> and <code>beta_n</code> inside <code>F_n</code>, this to gain time avoiding function calls. We also define a vectorized version <code>vF_n</code> that will take two formal parameters, <code>v</code> and <code>n</code>, that can be vectors. We proceed in the same way with the \(m\) activation variable:
 </p>
 
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock5">def alpha_m(v):
+<pre class="src src-python" id="orgsrcblock8">def alpha_m(v):
     if np.abs(v-25.0) &lt; 1e-10:
         return 1.0
     else:
@@ -618,9 +680,24 @@ m_inf = np.vectorize(lambda v: alpha_m(v)/(alpha_m(v) + beta_m(v)))
 </pre>
 </div>
 
+<p>
+The graphs (not shown) giving figures 7 and 8 pp 515-516 are obtained with:
+</p>
+
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock6">def F_m(v,m):
+<pre class="src src-python" id="orgsrcblock9">vv = np.linspace(-50,110,201)
+plt.plot(vv,np.vectorize(alpha_m)(vv),lw=2)
+plt.plot(vv,np.vectorize(beta_m)(vv),lw=2)
+plt.plot(vv,m_inf(vv)*10,lw=2)
+plt.xlim(-10,110)
+plt.ylim(0,10)
+</pre>
+</div>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock10">def F_m(v,m):
     if np.abs(v-25.0) &lt; 1e-10:
         alpha = 1.0
     else:
@@ -632,12 +709,26 @@ vF_m = np.vectorize(F_m)
 </div>
 
 <p>
+A quick check gives:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock11">vF_m([-10,0,10,20,30],[0.1,0.2,0.3,0.4,0.5])
+</pre>
+</div>
+
+<pre class="example">
+array([-0.59869277, -0.62114902, -0.38730895, -0.06484611,  0.2569922 ])
+</pre>
+
+<p>
 And for the \(h\) activation variable:
 </p>
 
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock7">def alpha_h(v):
+<pre class="src src-python" id="orgsrcblock12">def alpha_h(v):
     return 0.07*np.exp(-0.05*v)
 def beta_h(v):
     return 1.0/(np.exp((30.0 - v)/10.0) + 1.0)
@@ -647,16 +738,39 @@ def h_inf(v):
 </div>
 
 <p>
-Notice that since <code>alpha_h</code> is already (implicitly) vectorized, there is no need to use <code>np.vectorize</code> when defining function <code>h_inf</code>.
+Notice that since <code>alpha_h</code> is already (implicitly) vectorized, there is no need to use <code>np.vectorize</code> when defining function <code>h_inf</code>. The graphs (not shown) giving figures 9 and 10 pp 517-518 are obtained with:
 </p>
 
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock8">def F_h(v,h):
+<pre class="src src-python" id="orgsrcblock13">vv = np.linspace(-50,110,201)
+plt.plot(vv,np.vectorize(alpha_h)(vv),lw=2)
+plt.plot(vv,np.vectorize(beta_h)(vv),lw=2)
+plt.plot(vv,h_inf(vv),lw=2)
+</pre>
+</div>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock14">def F_h(v,h):
     return 0.07*np.exp(-0.05*v)*(1-h)-1.0/(np.exp((30.0 - v)/10.0) + 1.0)*h
 vF_h = np.vectorize(F_h)
 </pre>
 </div>
+
+<p>
+A quick check gives:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock15">vF_h([-10,0,10,20,30],[0.1,0.2,0.3,0.4,0.5])
+</pre>
+</div>
+
+<pre class="example">
+array([ 0.10207082,  0.04651483, -0.00604087, -0.09212563, -0.24219044])
+</pre>
 
 <p>
 We define next <code>F_V</code> corresponding to the \(F_1\) of equation 15. This function takes 5 formal parameters: <code>v</code>, <code>n</code>, <code>m</code>, <code>h</code> and <code>Ia</code> the injected current. The maximal conductances [mS / cm\(^2\)] and reversal potentials [mV] from H &amp; H (1952) are assigned to local variables in the function. A vectorized version is also defined:
@@ -664,7 +778,7 @@ We define next <code>F_V</code> corresponding to the \(F_1\) of equation 15. Thi
 
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock9">def F_V(v,n,m,h,Ia):
+<pre class="src src-python" id="orgsrcblock16">def F_V(v,n,m,h,Ia):
     GNa, GK, GL = 120.0, 36.0, 0.3 # H &amp; H 1952
     ENa, EK, EL = 115.0, -12.0, 10.613 # H &amp; H 1952
     return (GK*n**4*(EK-v)+GNa*m**3*h*(ENa-v)+GL*(EL-v)+Ia)/Cm
@@ -672,9 +786,43 @@ vF_V = np.vectorize(F_V)
 </pre>
 </div>
 
+<p>
+We can now make a first (explicit) step. We are going to consider a thin cable with a 1 \(\mu{}m\) radius and we start by getting its length constant: \(\lambda = \sqrt{a/2 \rho_i \sigma_m}\). We already set \(\rho_i = 35.4\) [\(\Omega{}\) cm], we get the resting value of \(\sigma_m\) [S / cm\(^2\)] by getting the activation variables values at resting level (don't forget that the conductance densities given by H &amp; H are in [mS]):
+</p>
+
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock10">def lees_method(a, axon_length, sim_time,
+<pre class="src src-python" id="orgsrcblock17">sigma_m_rest = (36*n_inf(0)**4+120*m_inf(0)**3*h_inf(0)+0.3)/1000
+sigma_m_rest
+</pre>
+</div>
+
+<pre class="example">
+0.00067725364844574128
+</pre>
+
+<p>
+This gives us a length constant at rest in cm:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock18">lambda_rest = np.sqrt(1e-4/2/rho/sigma_m_rest)
+lambda_rest
+</pre>
+</div>
+
+<pre class="example">
+0.045667548060889344
+</pre>
+
+<p>
+So our length constant is roughly 500 \(\mu{}m\).
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock19">def lees_method(a, axon_length, sim_time,
                 m, n, Iapp):
     """ Computes the spatiotemporal evolution of membrane potential of
         an axon.
@@ -696,6 +844,7 @@ vF_V = np.vectorize(F_V)
     Cm = 1.0 # H &amp; H 1952 [μF / cm^2]
     rho = 35.4 # H &amp; H 1952, rho is the inverse of σi [Ω cm]
     D = a / (2.0 * rho * Cm) # the "Diffusion" constant
+    D
     # Activation functions taken from H &amp; H 1952
     def alpha_n(v):
         if np.abs(v-10.0) &lt; 1e-10:
@@ -829,7 +978,7 @@ vF_V = np.vectorize(F_V)
 <div id="postamble" class="status">
 <p class="date">Date: <span class="timestamp-wrapper"><span class="timestamp">&lt;2016-01-14 jeu.&gt;</span></span></p>
 <p class="author">Author: Christophe Pouzat</p>
-<p class="date">Created: 2016-01-16 sam. 10:53</p>
+<p class="date">Created: 2016-01-16 sam. 13:05</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
