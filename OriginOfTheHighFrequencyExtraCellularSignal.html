@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2016-01-16 sam. 13:05 -->
+<!-- 2016-01-16 sam. 15:52 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="viewport" content="width=device-width, initial-scale=1" />
 <title>Origin Of The (High Frequency) Extra-cellular Signal</title>
@@ -817,12 +817,137 @@ lambda_rest
 </pre>
 
 <p>
-So our length constant is roughly 500 \(\mu{}m\).
+So our length constant is roughly 500 \(\mu{}m\). We will pick a space discretization step of 50 \(\mu{}m\) (5 \(\times 10^{-3}\) cm) equal to a tenth of the length constant and choose a cable length of 2000 \(\mu{}m\) (0.2 cm), four times the length constant. We then choose our time discretization step such that the value \(r\) defined by equation 23 is not too large, say 4 (the reason for using an implicit method like the <a href="https://en.wikipedia.org/wiki/Crank%E2%80%93Nicolson_method">Crank-Nicolson</a> method instead of an explicit one in that the latter is stable only if \(r < 0.5\)). That gives us for \(\Delta{}t\) (remember that our <code>D</code> above is in cm\(^2\) / \(\mu{}s\) and we want a result in \(ms\)):
 </p>
 
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock19">def lees_method(a, axon_length, sim_time,
+<pre class="src src-python" id="orgsrcblock19">Delta_x = 5e-3
+r = 4
+Delta_t = r*Delta_x**2/D/1000
+Delta_t
+</pre>
+</div>
+
+<pre class="example">
+0.0708
+</pre>
+
+<p>
+To be on the safe side, we will pick a \(\Delta{}t\) of 0.05 ms:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock20">Delta_t = 0.05
+</pre>
+</div>
+
+<p>
+We now need 4 vectors containing the membrane voltage (deviation) and the value of each activation variable at each discrete location along our cable:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock21">L = 0.2
+M = 0.2/Delta_x
+v_0 = np.zeros(M+1)
+n_0 = np.ones(M+1)*n_inf(0)
+m_0 = np.ones(M+1)*m_inf(0)
+h_0 = np.ones(M+1)*h_inf(0)
+</pre>
+</div>
+
+<p>
+We also need a vector of the same length with the injected current density at each point along the axon:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock22">Ia_0 = np.zeros(M+1)
+Ia_0[0] = 1e4
+</pre>
+</div>
+
+<p>
+We can now define a function performing a single time step with the explicit method using equations 27, 38 and 40:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock23">def explicit_step(v,n,m,h,Ia):
+    v_new = np.copy(v)
+    n_new = np.copy(n)
+    m_new = np.copy(m)
+    h_new = np.copy(h)
+    reaction_term = Delta_t * vF_V(v,n,m,h,Ia)
+    diffusion_term = np.zeros(len(v))
+    diffusion_term[1:-1] = (v[0:-2]-2*v[1:-1]+v[2:])*r
+    diffusion_term[0] = 2*r*(v[1]-v[0])
+    diffusion_term[-1] = 2*r*(v[-2]-v[-1])
+    v_new += diffusion_term + reaction_term
+    n_new += Delta_t*vF_n(v,n)
+    m_new += Delta_t*vF_m(v,m)
+    h_new += Delta_t*vF_h(v,h)
+    return v_new,n_new,m_new,h_new
+</pre>
+</div>
+
+<p>
+We perform one explicit step with:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock24">v_1, n_1, m_1, h_1 = explicit_step(v_0,n_0,m_0,h_0,Ia_0)
+</pre>
+</div>
+
+<p>
+The general time step using Lees' method is an implicit one and requires a banded matrix (containing the voltage multiplying factor on the right hand side of equations 28, 37 and 39) to be define that's what do now:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock25">A = np.zeros((3,M+1))
+A[0,2:] = -r/2.0 # upper diagonal
+A[0,1] = -r # upper diagonal
+A[1,:] = 1.0 + r # diagonal
+A[2,:-3] = -r/2.0 # lower diagonal
+A[2,-2] = -r # lower diagonal
+</pre>
+</div>
+
+<p>
+We now define a function doing one Lees' step since this function is going to be called often, rather than having it initializing its results we pass the vectors that will contain these results are formal parameters (so we do not have to do time consuming memory allocation at each step). The function needs moreover the present and previous (or old) values of v, n, m and h as well as Ia. The function assumes that the banded matrix <code>A</code> above is already available in the environment:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock26">def lees_step(v_old,n_old,m_old,h_old,Ia_old,
+              v_present,n_present,m_present,h_present,Ia_present):
+    from scipy.linalg import solve_banded
+    v_extra = 1.5*v_present-0.5*v_old # extrapolated mid-point value
+    n_extra = 1.5*n_present-0.5*n_old # extrapolated mid-point value
+    m_extra = 1.5*m_present-0.5*m_old # extrapolated mid-point value          
+    h_extra = 1.5*h_present-0.5*h_old # extrapolated mid-point value
+    Ia_extra = 1.5*Ia_present-0.5*Ia_old # extrapolated mid-point value
+    n_new = np.copy(n_present)+Delta_t*vF_n(v_extra,n_extra)
+    m_new = np.copy(m_present)+Delta_t*vF_m(v_extra,m_extra)
+    h_new = np.copy(h_present)+Delta_t*vF_h(v_extra,h_extra)
+    reaction_term = Delta_t*vF_V(v_extra,n_extra,m_extra,h_extra,Ia_extra)
+    diffusion_term = (1-r)*np.copy(v_present)
+    diffusion_term[1:-1] += v_present[0:-2] + v_present[2:]
+    diffusion_term[0] += r*v_present[1]
+    diffusion_term[-1] += r*v_present[-2]
+    v_new = solve_banded((1,1),A,reaction_term+diffusion_term)
+    return v_new, n_new, m_new, h_new
+</pre>
+</div>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock27">def lees_method(a, axon_length, sim_time,
                 m, n, Iapp):
     """ Computes the spatiotemporal evolution of membrane potential of
         an axon.
@@ -978,7 +1103,7 @@ So our length constant is roughly 500 \(\mu{}m\).
 <div id="postamble" class="status">
 <p class="date">Date: <span class="timestamp-wrapper"><span class="timestamp">&lt;2016-01-14 jeu.&gt;</span></span></p>
 <p class="author">Author: Christophe Pouzat</p>
-<p class="date">Created: 2016-01-16 sam. 13:05</p>
+<p class="date">Created: 2016-01-16 sam. 15:52</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
