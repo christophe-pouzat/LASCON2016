@@ -270,16 +270,115 @@ while for $j=0$ we have:
 
  
 *** Python code doing the job
+We are going to solve the standard H & H model using the Neumann boundary conditions with $\alpha = \beta = 0$ ("sealed ends"). We start by assigning few variables considering an axon with a radius $a$ of 1 $\mu{}m$ that is $10^{-4}$ cm:
+
+#+NAME: assign-a-axon-radius
+#+BEGIN_SRC python :eval no-export :results silent
+a = 1e-4
+#+END_SRC
+
+#+NAME: Cm-rho-D-definition
+#+BEGIN_SRC python :eval no-export :results silent
+Cm = 1.0 # H & H 1952 [μF / cm^2]
+rho = 35.4 # H & H 1952, rho is the inverse of σi [Ω cm]
+D = a / (2.0 * rho * Cm) # the "Diffusion" constant
+#+END_SRC 
+
+Notice that with this choice of units =D= is measured in cm$^2$ / $\mu{}s$. We define next, for each activation variable, $n, m, h$ the $\alpha(v)$ and $\beta(v)$ functions---where the formal parameter $v$ stands for the *deviation of the membrane voltage with respect to rest*---as well as a function returning the steady-state value of the variable at a given voltage. We start with the $n$ activation variable assuming that the =numpy= module has been previously imported with the alias =np= (=import numpy as np=):
+
+#+NAME: n-activation
+#+BEGIN_SRC python :eval no-export :results silent
+def alpha_n(v):
+    if np.abs(v-10.0) < 1e-10:
+        return 0.1
+    else:
+        return 0.01*(10.0 - v)/(np.exp((10.0-v)/10.0)-1.0)
+def beta_n(v):
+    return 0.125*np.exp(-0.0125*v)
+n_inf = np.vectorize(lambda v: alpha_n(v)/(alpha_n(v) + beta_n(v)))
+#+END_SRC
+
+Notice that we took care of the special case $v=10$ using the limit to avoid the undefined expression $0/0$. The =n_inf= function has been defined in a [[http://docs.scipy.org/doc/numpy/reference/generated/numpy.vectorize.html#numpy.vectorize][vectorized form]] since our definition of =alpha_n= works only with scalar arguments. We can now define function =F_n= corresponding to the $F_2$ of equation 15 whose expression is given by equation 12; this function takes two formal parameters: the membrane potential (deviation) =v= and the activation variable =n=:
+
+#+NAME: F_n-and-vF_n-definitions 
+#+BEGIN_SRC python :eval no-export :results silent
+def F_n(v,n):
+    if np.abs(v-10.0) < 1e-10:
+        alpha = 0.1
+    else:
+        alpha = 0.01*(10.0 - v)/(np.exp((10.0-v)/10.0)-1.0)
+    beta = 0.125*np.exp(-0.0125*v)
+    return alpha*(1-n)-beta*n
+vF_n = np.vectorize(F_n)    
+#+END_SRC
+ 
+Notice that we "redefine" =alpha_n= and =beta_n= inside =F_n=, this to gain time avoiding function calls. We also define a vectorized version =vF_n= that will take two formal parameters, =v= and =n=, that can be vectors. We proceed in the same way with the $m$ activation variable:
+
+#+NAME: m-activation
+#+BEGIN_SRC python :eval no-export :results silent
+def alpha_m(v):
+    if np.abs(v-25.0) < 1e-10:
+        return 1.0
+    else:
+        return 0.1*(25.0 - v)/(np.exp((25.0 - v)/10.0)-1.0)
+def beta_m(v):
+        return 4*np.exp(-.0555*v)
+m_inf = np.vectorize(lambda v: alpha_m(v)/(alpha_m(v) + beta_m(v)))
+#+END_SRC
+
+#+NAME: F_m-and-vF_m-definitions 
+#+BEGIN_SRC python :eval no-export :results silent
+def F_m(v,m):
+    if np.abs(v-25.0) < 1e-10:
+        alpha = 1.0
+    else:
+        alpha =  0.1*(25.0 - v)/(np.exp((25.0 - v)/10.0)-1.0)
+    beta = 4*np.exp(-.0555*v)
+    return alpha*(1-m)-beta*m
+vF_m = np.vectorize(F_m)
+#+END_SRC
+
+And for the $h$ activation variable:
+
+#+NAME: h-activation
+#+BEGIN_SRC python :eval no-export :results silent
+def alpha_h(v):
+    return 0.07*np.exp(-0.05*v)
+def beta_h(v):
+    return 1.0/(np.exp((30.0 - v)/10.0) + 1.0)
+def h_inf(v):
+    return alpha_h(v)/(alpha_h(v) + beta_h(v))
+#+END_SRC
+
+Notice that since =alpha_h= is already (implicitly) vectorized, there is no need to use =np.vectorize= when defining function =h_inf=.
+
+#+NAME: F_h-and-vF_h-definitions 
+#+BEGIN_SRC python :eval no-export :results silent
+def F_h(v,h):
+    return 0.07*np.exp(-0.05*v)*(1-h)-1.0/(np.exp((30.0 - v)/10.0) + 1.0)*h
+vF_h = np.vectorize(F_h)
+#+END_SRC
+
+We define next =F_V= corresponding to the $F_1$ of equation 15. This function takes 5 formal parameters: =v=, =n=, =m=, =h= and =Ia= the injected current. The maximal conductances [mS / cm$^2$] and reversal potentials [mV] from H & H (1952) are assigned to local variables in the function. A vectorized version is also defined:
+
+#+NAME: F_V-and-vF_V-definitions
+#+BEGIN_SRC python :eval no-export :results silent
+def F_V(v,n,m,h,Ia):
+    GNa, GK, GL = 120.0, 36.0, 0.3 # H & H 1952
+    ENa, EK, EL = 115.0, -12.0, 10.613 # H & H 1952
+    return (GK*n**4*(EK-v)+GNa*m**3*h*(ENa-v)+GL*(EL-v)+Ia)/Cm
+vF_V = np.vectorize(F_V)
+#+END_SRC
 
 #+NAME: lees_method-definition
-#+BEGIN_SRC python :eval no-export :results silent
-def lees_method(radius_axon, axon_length, sim_time,
+#+BEGIN_SRC python :eval no-export :results silent :noweb yes
+def lees_method(a, axon_length, sim_time,
                 m, n, Iapp):
     """ Computes the spatiotemporal evolution of membrane potential of
         an axon.
 
         Args:
-            radius_axon (float): Radius of axon (in cm)
+            a (float): Radius of axon (in cm)
             axon_length (float): Length of axon (in cm)
             sim_time (float): Total simulation time in (ms)
             m (int): m+1 is the number of space steps
@@ -292,55 +391,15 @@ def lees_method(radius_axon, axon_length, sim_time,
     """
     import numpy as np
     from scipy.linalg import solve_banded
-    Cm = 1.0 # H & H 1952 [μF / cm^2]
-    rho = 35.4 # H & H 1952, rho is the inverse of σi [Ω cm]
-    D_axon = radius_axon / (2.0 * rho * Cm) # the "Diffusion" constant
+    <<Cm-rho-D-definition>>
     # Activation functions taken from H & H 1952
-    def alpha_n(v):
-        if np.abs(v-10.0) < 1e-10:
-            return 0.1
-        else:
-            return 0.01*(10.0 - v)/(np.exp((10.0-v)/10.0)-1.0)
-    def beta_n(v):
-        return 0.125*np.exp(-0.0125*v)
-    n_inf = np.vectorize(lambda v: alpha_n(v)/(alpha_n(v) + beta_n(v)))
-    def F_n(v,n):
-        if np.abs(v-10.0) < 1e-10:
-            alpha = 0.1
-        else:
-            alpha = 0.01*(10.0 - v)/(np.exp((10.0-v)/10.0)-1.0)
-        beta = 0.125*np.exp(-0.0125*v)
-        return alpha*(1-n)-beta*n
-    vF_n = np.vectorize(F_n)
-    def alpha_m(v):
-        if np.abs(v-25.0) < 1e-10:
-            return 1.0
-        else:
-            return 0.1*(25.0 - v)/(np.exp((25.0 - v)/10.0)-1.0)
-    def beta_m(v):
-        return 4*np.exp(-.0555*v)
-    m_inf = np.vectorize(lambda v: alpha_m(v)/(alpha_m(v) + beta_m(v)))
-    def F_m(v,m):
-        if np.abs(v-25.0) < 1e-10:
-            alpha = 1.0
-        else:
-            alpha =  0.1*(25.0 - v)/(np.exp((25.0 - v)/10.0)-1.0)
-        beta = 4*np.exp(-.0555*v)
-        return alpha*(1-m)-beta*m
-    vF_m = np.vectorize(F_m)
-    def alpha_h(v):
-        return 0.07*np.exp(-0.05*v)
-    def beta_h(v):
-        return 1.0/(np.exp((30.0 - v)/10.0) + 1.0)
-    h_inf = np.vectorize(lambda v: alpha_h(v)/(alpha_h(v) + beta_h(v)))
-    def F_h(v,h):
-        return 0.07*np.exp(-0.05*v)*(1-h)-1.0/(np.exp((30.0 - v)/10.0) + 1.0)*h
-    vFh = np.vectorize(F_h)
-    def F_V(v,n,m,h,Ia):
-        GNa, GK, GL = 120.0, 36.0, 0.3 # H & H 1952
-        ENa, EK, EL = 115.0, -12.0, 10.613 # H & H 1952
-        return (GK*n**4*(EK-v)+GNa*m**3*h*(ENa-v)+GL*(EL-v)+Ia)/Cm
-    vF_V = np.vectorize(F_V)
+    <<n-activation>>
+    <<F_n-and-vF_n-definitions>>
+    <<m-activation>>
+    <<F_m-and-vF_m-definitions>>
+    <<h-activation>>
+    <<F_h-and-vF_h-definitions>>
+    <<F_V-and-vF_V-definitions>>
     # Simulation time and rod length
     time, axon_len = sim_time, axon_length
     # Mesh and time points
@@ -348,7 +407,7 @@ def lees_method(radius_axon, axon_length, sim_time,
     # Compute mesh spacing and time step
     dxA, dt = axon_len/(Nx-1), time/(Nt-1)
     # Compute the quantity DΔt/(2Δx²)
-    r_axon = D_axon * dt/(dxA**2)
+    r_axon = D * dt/(dxA**2)
     # Initialize solution arrays
     VA = np.zeros((Nt+1, Nx+1))
     # Initialize kinetics arrays
