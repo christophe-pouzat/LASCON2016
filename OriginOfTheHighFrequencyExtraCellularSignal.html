@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2016-01-17 dim. 15:33 -->
+<!-- 2016-01-17 dim. 18:39 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="viewport" content="width=device-width, initial-scale=1" />
 <title>Origin Of The (High Frequency) Extra-cellular Signal</title>
@@ -177,14 +177,15 @@ for the JavaScript code in this tag.
 <li><a href="#orgheadline3">2.2. Membrane current density</a></li>
 </ul>
 </li>
-<li><a href="#orgheadline10">3. Numerical integration of the H &amp; H equation</a>
+<li><a href="#orgheadline11">3. Numerical integration of the H &amp; H equation</a>
 <ul>
-<li><a href="#orgheadline9">3.1. A standardized form for the non-linear reaction-diffusion equations</a>
+<li><a href="#orgheadline10">3.1. A standardized form for the non-linear reaction-diffusion equations</a>
 <ul>
 <li><a href="#orgheadline5">3.1.1. The heat equation</a></li>
 <li><a href="#orgheadline6">3.1.2. Adding the reaction term: Lee's method</a></li>
 <li><a href="#orgheadline7">3.1.3. Boundary conditions</a></li>
 <li><a href="#orgheadline8">3.1.4. Python code doing the job</a></li>
+<li><a href="#orgheadline9">3.1.5. Some functions definitions</a></li>
 </ul>
 </li>
 </ul>
@@ -319,8 +320,8 @@ At that stage, in order to go further, we need an explicit expression or value f
 </div>
 </div>
 
-<div id="outline-container-orgheadline10" class="outline-2">
-<h2 id="orgheadline10"><span class="section-number-2">3</span> Numerical integration of the H &amp; H equation</h2>
+<div id="outline-container-orgheadline11" class="outline-2">
+<h2 id="orgheadline11"><span class="section-number-2">3</span> Numerical integration of the H &amp; H equation</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 We follow here the exposition of Tuckwell (1988) <i>Introduction to theoretical neurobiology. Volume 2.</i> CUP, pp 54-70<sup><a id="fnr.1" class="footref" href="#fn.1">1</a></sup>. We want to solve the following set of equations:
@@ -334,12 +335,12 @@ We follow here the exposition of Tuckwell (1988) <i>Introduction to theoretical 
 \end{align}
 
 <p>
-where \(C_m\) is the membrane capacitance per unit area [F/cm\(^2\)]; \(\overline{g}_K\), \(\overline{g}_{Na}\) and \(g_l\) are the potassium, sodium and leak conductances per unit area [S/cm\(^2\)]; \(V_K\), \(V_{Na}\) and \(V_l\) are the potassium, sodium and leak currents reversal potentials [mV] and \(I_a\) is "externally" applied current per unit area [mA/cm\(^2\)] and all the \(\alpha\) and \(\beta\) function are in [1/ms]. 
+where \(C_m\) is the membrane capacitance per unit area [F/cm\(^2\)]; \(\overline{g}_K\), \(\overline{g}_{Na}\) and \(g_l\) are the potassium, sodium and leak conductances per unit area [S/cm\(^2\)]; \(V_K\), \(V_{Na}\) and \(V_l\) are the potassium, sodium and leak currents reversal potentials [mV] and \(I_a\) is "externally" applied current per unit area [mA/cm\(^2\)] and all the \(\alpha\) and \(\beta\) functions are measured in [1/ms]. 
 </p>
 </div>
 
-<div id="outline-container-orgheadline9" class="outline-3">
-<h3 id="orgheadline9"><span class="section-number-3">3.1</span> A standardized form for the non-linear reaction-diffusion equations</h3>
+<div id="outline-container-orgheadline10" class="outline-3">
+<h3 id="orgheadline10"><span class="section-number-3">3.1</span> A standardized form for the non-linear reaction-diffusion equations</h3>
 <div class="outline-text-3" id="text-3-1">
 <p>
 We will consider a <i>reaction-diffusion</i> system with the form:
@@ -550,7 +551,7 @@ while for \(j=0\) we have:
 <h4 id="orgheadline8"><span class="section-number-4">3.1.4</span> Python code doing the job</h4>
 <div class="outline-text-4" id="text-3-1-4">
 <p>
-We are going to solve the standard H &amp; H model using the Neumann boundary conditions with \(\alpha = \beta = 0\) ("sealed ends"). We start by an <code>IPython</code> session loading the two main modules we are going on a regular basis, <code>numpy</code> and <code>pylab</code> a sub-module of <code>matplotlib</code>:
+We are going to solve the standard H &amp; H model using the Neumann boundary conditions with \(\alpha = \beta = 0\) ("sealed ends"). We start by an <code>IPython</code> session&#x2014;but it wokrs as well with a classical <code>Python</code> session&#x2014;loading the two main modules we are going on a regular basis, <code>numpy</code> and <code>pylab</code> a sub-module of <code>matplotlib</code>:
 </p>
 
 <div class="org-src-container">
@@ -563,7 +564,7 @@ plt.style.use('ggplot')
 </div>
 
 <p>
-The two last commands gives us <i>interactive</i> graphics (<code>plt.ion</code>) and a nicer default style for the graphs (<code>plt.style.use('ggplot')</code>). We then assign a few variables considering an axon with a radius \(a\) of 1 \(\mu{}m\) that is \(10^{-4}\) cm:
+The two last commands give us <i>interactive</i> graphics (<code>plt.ion</code>) and a nicer default style for the graphs (<code>plt.style.use('ggplot')</code>). We then assign a few variables considering an axon with a radius \(a\) of 1 \(\mu{}m\) that is \(10^{-4}\) cm (for quantitative data on CNS axons diameters, see <a href="http://www.jneurosci.org/content/32/2/626.abstract">Perge et al (2013)</a>):
 </p>
 
 <div class="org-src-container">
@@ -586,7 +587,7 @@ D
 </pre>
 
 <p>
-Notice that with this choice of units <code>D</code> is measured in cm\(^2\) / \(\mu{}s\). We define next, for each activation variable, \(n, m, h\) the \(\alpha(v)\) and \(\beta(v)\) functions&#x2014;where the formal parameter \(v\) stands for the <b>deviation of the membrane voltage with respect to rest</b>&#x2014;as well as a function returning the steady-state value of the variable at a given voltage. We start with the \(n\) activation variable assuming that the <code>numpy</code> module has been previously imported with the alias <code>np</code> (<code>import numpy as np</code>):
+Notice that with this choice of units <code>D</code> is measured in cm\(^2\) / \(\mu{}s\). We define next, for each activation variable, \(n, m, h\) the \(\alpha(v)\) and \(\beta(v)\) functions&#x2014;where the formal parameter \(v\) stands for the <b>deviation of the membrane voltage with respect to rest</b>&#x2014;as well as a function returning the steady-state value of the variable at a given voltage. We start with the \(n\) activation variable&#x2014;the <code>numpy</code> module must have been previously imported with the alias <code>np</code> (<code>import numpy as np</code>)&#x2014;:
 </p>
 
 <div class="org-src-container">
@@ -664,7 +665,7 @@ array([ 0.01400882,  0.02155814,  0.03690637,  0.05597856,  0.07269618])
 </pre>
 
 <p>
-Notice that we "redefine" <code>alpha_n</code> and <code>beta_n</code> inside <code>F_n</code>, this to gain time avoiding function calls. We also define a vectorized version <code>vF_n</code> that will take two formal parameters, <code>v</code> and <code>n</code>, that can be vectors. We proceed in the same way with the \(m\) activation variable:
+Notice that we "redefine" <code>alpha_n</code> and <code>beta_n</code> inside <code>F_n</code>, this is to gain execution time by avoiding function calls. We also define a vectorized version <code>vF_n</code> that will take two formal parameters, <code>v</code> and <code>n</code>, that can be vectors. We proceed in the same way with the \(m\) activation variable:
 </p>
 
 <div class="org-src-container">
@@ -817,7 +818,7 @@ lambda_rest
 </pre>
 
 <p>
-So our length constant is roughly 500 \(\mu{}m\). We will pick a space discretization step of 50 \(\mu{}m\) (5 \(\times 10^{-3}\) cm) equal to a tenth of the length constant and choose a cable length of 20000 \(\mu{}m\) (2 cm), forty times the length constant. We then choose our time discretization step such that the value \(r\) defined by equation 23 is not too large, say 4 (the reason for using an implicit method like the <a href="https://en.wikipedia.org/wiki/Crank%E2%80%93Nicolson_method">Crank-Nicolson</a> method instead of an explicit one in that the latter is stable only if \(r < 0.5\)). That gives us for \(\Delta{}t\) (remember that our <code>D</code> above is in cm\(^2\) / \(\mu{}s\) and we want a result in \(ms\)):
+So our length constant is roughly 500 \(\mu{}m\). We will pick a space discretization step of 50 \(\mu{}m\) (5 \(\times 10^{-3}\) cm) equal to a tenth of the length constant and choose a cable length of 20000 \(\mu{}m\) (2 cm), forty times the length constant. We then choose our time discretization step such that the value \(r\) defined by equation 23 is not too large, say 4 (the reason for using an implicit method like the <a href="https://en.wikipedia.org/wiki/Crank%E2%80%93Nicolson_method">Crank-Nicolson</a> method instead of an explicit one in that the latter is stable only if \(r \le 0.5\)). That gives us for \(\Delta{}t\) (remember that our <code>D</code> above is in cm\(^2\) / \(\mu{}s\) and we want a result in \(ms\)):
 </p>
 
 <div class="org-src-container">
@@ -904,7 +905,7 @@ We perform one explicit step with:
 </div>
 
 <p>
-The general time step using Lees' method is an implicit one and requires a banded matrix (containing the voltage multiplying factor on the right hand side of equations 28, 37 and 39) to be define that's what do now:
+The general time step using Lees' method is an implicit one and requires a banded matrix (containing the voltage factor on the right hand side of equations 28, 37 and 39) to be define that's what do now:
 </p>
 
 <div class="org-src-container">
@@ -956,7 +957,7 @@ We make one step with:
 </div>
 
 <p>
-Now 200 more steps stopping the stimulation after 0.2 ms or 4 steps:
+Now 2000 more steps stopping the stimulation after 2 ms or 80 steps (this take a few seconds on my slow laptop):
 </p>
 
 <div class="org-src-container">
@@ -986,32 +987,75 @@ for i in range(2,2002):
 </pre>
 </div>
 
+<p>
+We can graph the spatial profile of the membrane potential deviation at different times like every 40 time steps or every ms for the first 10 ms:
+</p>
+
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock29">def lees_method(a, axon_length, sim_time,
-                m, n, Iapp):
-    """ Computes the spatiotemporal evolution of membrane potential of
-        an axon.
+<pre class="src src-python" id="orgsrcblock29">xx = np.arange(0,M+1)*5e-3
+for i in range(0,442,40):
+    plt.plot(xx,v_M[i],color='black',lw=2)
+plt.xlabel('Position (cm)')
+plt.ylabel(r'$\Delta{}V_m$ (mV)')
+</pre>
+</div>
 
-        Args:
-            a (float): Radius of axon (in cm)
-            axon_length (float): Length of axon (in cm)
-            sim_time (float): Total simulation time in (ms)
-            m (int): m+1 is the number of space steps
-            n (int): n+1 is the number of time steps
-            Iapp (float): External input current intensity
 
-        Returns:
-            VmA (float): A n+1 x m+1 array containing axon's membrane
-                            potential (in mV, deviation with respect to rest)
+<div class="figure">
+<p><img src="figsL1/voltage_spatial_profile_evolution.png" alt="voltage_spatial_profile_evolution.png" />
+</p>
+<p><span class="figure-number">Figure 2:</span> Spatial profile of the membrane voltage at every ms for 11 ms (from left to right).</p>
+</div>
+
+<p>
+Before going further, writing a couple of functions abstracting the many pieces of code we have just used seems a good idea.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgheadline9" class="outline-4">
+<h4 id="orgheadline9"><span class="section-number-4">3.1.5</span> Some functions definitions</h4>
+<div class="outline-text-4" id="text-3-1-5">
+<p>
+We want a function that takes axon geometrical parameters&#x2014;radius and length&#x2014;, simulation time, space and time steps and applied current as formal parameters and for which all the other parameters (reversal potentials, conductances, etc) are set. If we want to be able to change one or several of these other parameters, it is worth exploiting one of the great features of <a href="https://en.wikipedia.org/wiki/Python_syntax_and_semantics">Python</a>: is supports <a href="https://en.wikipedia.org/wiki/Closure_(computer_programming)">lexical closures</a>; and that allows us to write functions returning other functions. That's what we will do here (remark that all the functions previously defined are reused directly, except <code>F_V</code> since the necessary parameters are in the lexical scope of the function definition).
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock30">def mk_cable_fcts(Cm = 1.0,
+                  rho = 35.4, 
+                  GNa = 120.0,
+                  ENa = 115.0,
+                  GK = 36.0,
+                  EK = -12.0,
+                  GL = 0.3,
+                  EL = 10.5987):
+    """Returns functions for H &amp; H axon simulation
+    
+    Formal parameters:
+    Cm: a double, the membrane capacitance [μF / cm^2]
+    rho: a double, intracellular resistivity [Ω cm]
+    GNa: sodium conductance density [mS / cm^2]
+    ENa: sodium reversal potential [mV]
+    GK: potassium conductance density [mS / cm^2]
+    EK: potassium reversal potential [mV]
+    GL: leak conductance density [mS / cm^2]
+    EL: leak reversal potential [mV]
+
+    Returns:
+    D_fct: a function of the axon radius in cm that
+           returns the "diffusion coefficient"
+    r_fct: a function of the radius, the space and time steps
+           that returns the value of r in equation 23
+    lambda_fct: a function of the radius that returns the
+                length constant
+    sim_with_lees: a function of the radius, the length, the steps
+                   the injected current that performs the simulation
     """
     import numpy as np
-    from scipy.linalg import solve_banded
-    Cm = 1.0 # H &amp; H 1952 [μF / cm^2]
-    rho = 35.4 # H &amp; H 1952, rho is the inverse of σi [Ω cm]
-    D = a / (2.0 * rho * Cm) # the "Diffusion" constant
-    D
-    # Activation functions taken from H &amp; H 1952
+    def D_fct(a):
+        return a / (2.0 * rho * Cm)
     def alpha_n(v):
         if np.abs(v-10.0) &lt; 1e-10:
             return 0.1
@@ -1054,88 +1098,111 @@ for i in range(2,2002):
         return 0.07*np.exp(-0.05*v)*(1-h)-1.0/(np.exp((30.0 - v)/10.0) + 1.0)*h
     vF_h = np.vectorize(F_h)
     def F_V(v,n,m,h,Ia):
-        GNa, GK, GL = 120.0, 36.0, 0.3 # H &amp; H 1952
-        ENa, EK, EL = 115.0, -12.0, 10.5987 # H &amp; H 1952
         return (GK*n**4*(EK-v)+GNa*m**3*h*(ENa-v)+GL*(EL-v)+Ia)/Cm
     vF_V = np.vectorize(F_V)
-    # Simulation time and rod length
-    time, axon_len = sim_time, axon_length
-    # Mesh and time points
-    Nx, Nt = m, n
-    # Compute mesh spacing and time step
-    dxA, dt = axon_len/(Nx-1), time/(Nt-1)
-    # Compute the quantity DΔt/(2Δx²)
-    r_axon = D * dt/(dxA**2)
-    # Initialize solution arrays
-    VA = np.zeros((Nt+1, Nx+1))
-    # Initialize kinetics arrays
-    mAxon = np.zeros((Nt+1, Nx-1))
-    nAxon = np.zeros((Nt+1, Nx-1))
-    hAxon = np.zeros((Nt+1, Nx-1))
-    # Compute the initial values for n, m and h
-    mAxon[0] = m_inf(VA[0, 1:-1])
-    hAxon[0] = h_inf(VA[0, 1:-1])
-    nAxon[0] = n_inf(VA[0, 1:-1])
-    # Initialize the band matrix A (Ax = b)
-    axonD = np.zeros((Nx+1,)) # diagonal
-    axonL = np.zeros((Nx,)) # upper diagonal
-    axonU = np.zeros((Nx,)) # lower diagonal
-    AB = np.zeros((3,Nx+1))
-    # Fill in the band matrix A
-    axonL[:] = -r_axon/2.0
-    axonU[:] = -r_axon/2.0
-    axonD[:] = 1.0 + r_axon
-    axonD[0], axonD[Nx] = 1 + r_axon, 1 + r_axon
-    axonL[-1], axonU[0] = -r_axon, -r_axon
-    AB[0,1:] = axonU
-    AB[1,:] = axonD
-    AB[2,:-1] = axonL
-    # Right-hand side of Ax = b
-    axonB = np.zeros((Nx+1,))
-    # Applied current density
-    Iext = np.zeros((Nt+1, Nx-1))
-    Iext[0:10, :5] = Iapp
-    # The first time step is done with the explicit method
-    nAxon[1] = nAxon[0] + vF_n(VA[0, 1:-1],nAxon[0])*dt
-    mAxon[1] = mAxon[0] + vF_m(VA[0, 1:-1],mAxon[0])*dt
-    hAxon[1] = hAxon[0] + vF_h(VA[0, 1:-1],hAxon[0])*dt
-    for i in range(1, Nt):
-        # Compute the conductances for the axon
-        gANa = GNa * (mAxon[i-1]**3) * hAxon[i-1]
-        gAK = GK * (nAxon[i-1]**4)
-        gAL = GL
-        # Compute the kinetics (Forward Euler) for the axon
-        mAxon[i,:] = (mAxon[i-1,:] + dt*(alpha_m(VA[i-1, 1:-1])*(1 - mAxon[i-1]) -
-                                     beta_m(VA[i-1, 1:-1])*mAxon[i-1]))
-        nAxon[i,:] = (nAxon[i-1,:] + dt*(alpha_n(VA[i-1, 1:-1])*(1 - nAxon[i-1]) -
-                                     beta_n(VA[i-1, 1:-1])*nAxon[i-1]))
-        hAxon[i,:] = (hAxon[i-1,:] + dt*(alpha_h(VA[i-1, 1:-1])*(1 - hAxon[i-1]) -
-                                     beta_h(VA[i-1, 1:-1])*hAxon[i-1]))
-        # Compute the B vector for the axon
-        axonB[1:-1] = (r_axon * VA[i-1, :-2] +
-                       (1.0 - 2. * r_axon) * VA[i-1, 1:-1] +
-                       r_axon * VA[i-1, 2:] +
-                       dt/Cm * (gAL * (EL - VA[i-1, 1:-1]) +
-                       gANa * (ENa - VA[i-1, 1:-1])
-                       + gAK * (EK - VA[i-1, 1:-1]) +
-                       Iext[i-1]))
-        # Apply left boundary condition to the soma
-        axonB[0] = ((1 - 2.*r_axon) * VA[i-1, 0] +
-                    r_axon * VA[i-1, 1] +
-                    dt/Cm * (gAL * (EL - VA[i-1, 0]) +
-                    gANa[0] * (ENa - VA[i-1, 0]) +
-                    gAK[0] * (EK - VA[i-1, 0])))
-        # Apply right boundary condition to the axon
-        axonB[-1] = ((1 - 2.*r_axon) * VA[i-1, -2] +
-                     r_axon * VA[i-1, -1] +
-                     dt/Cm * (gAL * (EL - VA[i-1, -1])
-                     + gANa[-1] * (ENa - VA[i-1, -1]) +
-                     gAK[-1] * (EK - VA[i-1, -1])))
-        # Solve the system for axon
-        VA[i] = solve_banded((1,1),AB,axonB)
-    return VA
+    def lambda_fct(a):
+        sigma_m_rest = (GK*n_inf(0)**4+GNa*m_inf(0)**3*h_inf(0)+GL)/1000
+        return np.sqrt(a/2/rho/sigma_m_rest)
+    def r_fct(a,Delta_x,Delta_t):
+        return D_fct(a)*Delta_t*1000/Delta_x**2
+    def explicit_step(v,n,m,h,Ia):
+        v_new = np.copy(v)
+        n_new = np.copy(n)
+        m_new = np.copy(m)
+        h_new = np.copy(h)
+        reaction_term = Delta_t * vF_V(v,n,m,h,Ia)
+        diffusion_term = np.zeros(len(v))
+        diffusion_term[1:-1] = (v[0:-2]-2*v[1:-1]+v[2:])*r
+        diffusion_term[0] = 2*r*(v[1]-v[0])
+        diffusion_term[-1] = 2*r*(v[-2]-v[-1])
+        v_new += diffusion_term + reaction_term
+        n_new += Delta_t*vF_n(v,n)
+        m_new += Delta_t*vF_m(v,m)
+        h_new += Delta_t*vF_h(v,h)
+        return v_new,n_new,m_new,h_new
+    def lees_step(v_old,n_old,m_old,h_old,Ia_old,
+                  v_present,n_present,m_present,h_present,Ia_present):
+        from scipy.linalg import solve_banded
+        v_extra = 1.5*v_present-0.5*v_old # extrapolated mid-point value
+        n_extra = 1.5*n_present-0.5*n_old # extrapolated mid-point value
+        m_extra = 1.5*m_present-0.5*m_old # extrapolated mid-point value          
+        h_extra = 1.5*h_present-0.5*h_old # extrapolated mid-point value
+        Ia_extra = 1.5*Ia_present-0.5*Ia_old # extrapolated mid-point value
+        n_new = np.copy(n_present)+Delta_t*vF_n(v_extra,n_extra)
+        m_new = np.copy(m_present)+Delta_t*vF_m(v_extra,m_extra)
+        h_new = np.copy(h_present)+Delta_t*vF_h(v_extra,h_extra)
+        reaction_term = Delta_t*vF_V(v_extra,n_extra,m_extra,h_extra,Ia_extra)
+        diffusion_term = (1-r)*np.copy(v_present)
+        diffusion_term[1:-1] += (v_present[0:-2] + v_present[2:])*r/2.0
+        diffusion_term[0] += r*v_present[1]
+        diffusion_term[-1] += r*v_present[-2]
+        v_new = solve_banded((1,1),A,reaction_term+diffusion_term)
+        return v_new, n_new, m_new, h_new
+    def sim_with_lees(a,L,duration,
+                      Delta_x,Delta_t,
+                      Ia_amp, Ia_duration):
+        r = r_fct(a,Delta_x,Delta_t)
+        M = int(np.ceil(L/Delta_x))
+        N = int(np.ceil(duration/Delta_t))
+        Na = int(np.ceil(Ia_duration/Delta_t))
+        v_0 = np.zeros(M+1)
+        n_0 = np.ones(M+1)*n_inf(0)
+        m_0 = np.ones(M+1)*m_inf(0)
+        h_0 = np.ones(M+1)*h_inf(0)
+        Ia_0 = np.zeros(M+1)
+        Ia_0[0] = Ia_amp
+        v_1, n_1, m_1, h_1 = explicit_step(v_0,n_0,m_0,h_0,Ia_0)
+        A = np.zeros((3,M+1))
+        A[0,2:] = -r/2.0 # upper diagonal
+        A[0,1] = -r # upper diagonal
+        A[1,:] = 1.0 + r # diagonal
+        A[2,:-3] = -r/2.0 # lower diagonal
+        A[2,-2] = -r # lower diagonal
+        v_M = np.zeros((N,int(M+1)))
+        v_M[0] = v_0
+        v_M[1] = v_1
+        n_M = np.zeros((N,int(M+1)))
+        n_M[0] = n_0
+        n_M[1] = n_1
+        m_M = np.zeros((N,int(M+1)))
+        m_M[0] = m_0
+        m_M[1] = m_1
+        h_M = np.zeros((N,int(M+1)))
+        h_M[0] = h_0
+        h_M[1] = h_1
+        for i in range(2,N):
+            if i &lt; Na:
+                v_M[i,:],n_M[i,:],m_M[i,:],h_M[i,:] = lees_step(v_M[i-2,:],n_M[i-2,:],m_M[i-2,:],h_M[i-2,:],Ia_0,
+                                                                v_M[i-1,:],n_M[i-1,:],m_M[i-1,:],h_M[i-1,:],Ia_0)
+            if i == Na:
+                v_M[i,:],n_M[i,:],m_M[i,:],h_M[i,:] = lees_step(v_M[i-2,:],n_M[i-2,:],m_M[i-2,:],h_M[i-2,:],Ia_0,
+                                                                v_M[i-1,:],n_M[i-1,:],m_M[i-1,:],h_M[i-1,:],0)
+            if i &gt; Na:
+                v_M[i,:],n_M[i,:],m_M[i,:],h_M[i,:] = lees_step(v_M[i-2,:],n_M[i-2,:],m_M[i-2,:],h_M[i-2,:],0,
+                                                                v_M[i-1,:],n_M[i-1,:],m_M[i-1,:],h_M[i-1,:],0)
+        return v_M,n_M,m_M,h_M
+    return D_fct, r_fct, lambda_fct, sim_with_lees
 </pre>
 </div>
+
+<p>
+Once this kind of function has been defined <b>the first thing to do</b> is to check that it gives the same results as we got before doing the job step by step:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock31">D1,r1,lambda1,sim1 = mk_cable_fcts()
+D1(1e-4)
+r1(1e-4,5e-3,0.025)
+v1,n1,m1,h1 = sim1(1e-4,2,15,5e-3,0.025,1000,2)
+for i in range(0,442,40):
+    plt.plot(v1[i],color='black',lw=2)
+</pre>
+</div>
+
+<p>
+The results are not shown since they are identical to the previous ones but you are invited to check for yourself.
+</p>
 </div>
 </div>
 </div>
@@ -1154,7 +1221,7 @@ Tuckwell follows very closely&#x2014;with due citations&#x2014;the treatment of 
 <div id="postamble" class="status">
 <p class="date">Date: <span class="timestamp-wrapper"><span class="timestamp">&lt;2016-01-14 jeu.&gt;</span></span></p>
 <p class="author">Author: Christophe Pouzat</p>
-<p class="date">Created: 2016-01-17 dim. 15:33</p>
+<p class="date">Created: 2016-01-17 dim. 18:39</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
