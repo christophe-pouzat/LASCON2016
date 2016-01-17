@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2016-01-17 dim. 18:39 -->
+<!-- 2016-01-17 dim. 21:05 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="viewport" content="width=device-width, initial-scale=1" />
 <title>Origin Of The (High Frequency) Extra-cellular Signal</title>
@@ -179,15 +179,20 @@ for the JavaScript code in this tag.
 </li>
 <li><a href="#orgheadline11">3. Numerical integration of the H &amp; H equation</a>
 <ul>
-<li><a href="#orgheadline10">3.1. A standardized form for the non-linear reaction-diffusion equations</a>
+<li><a href="#orgheadline8">3.1. A standardized form for the non-linear reaction-diffusion equations</a>
 <ul>
 <li><a href="#orgheadline5">3.1.1. The heat equation</a></li>
 <li><a href="#orgheadline6">3.1.2. Adding the reaction term: Lee's method</a></li>
 <li><a href="#orgheadline7">3.1.3. Boundary conditions</a></li>
-<li><a href="#orgheadline8">3.1.4. Python code doing the job</a></li>
-<li><a href="#orgheadline9">3.1.5. Some functions definitions</a></li>
 </ul>
 </li>
+<li><a href="#orgheadline9">3.2. Python code doing the job</a></li>
+<li><a href="#orgheadline10">3.3. Some functions definitions</a></li>
+</ul>
+</li>
+<li><a href="#orgheadline13">4. Numerical investigation of the radius effect on the extracellular potential</a>
+<ul>
+<li><a href="#orgheadline12">4.1. A fast way to do the job</a></li>
 </ul>
 </li>
 </ul>
@@ -339,8 +344,8 @@ where \(C_m\) is the membrane capacitance per unit area [F/cm\(^2\)]; \(\overlin
 </p>
 </div>
 
-<div id="outline-container-orgheadline10" class="outline-3">
-<h3 id="orgheadline10"><span class="section-number-3">3.1</span> A standardized form for the non-linear reaction-diffusion equations</h3>
+<div id="outline-container-orgheadline8" class="outline-3">
+<h3 id="orgheadline8"><span class="section-number-3">3.1</span> A standardized form for the non-linear reaction-diffusion equations</h3>
 <div class="outline-text-3" id="text-3-1">
 <p>
 We will consider a <i>reaction-diffusion</i> system with the form:
@@ -545,11 +550,12 @@ while for \(j=0\) we have:
 \end{align}
 </div>
 </div>
+</div>
 
 
-<div id="outline-container-orgheadline8" class="outline-4">
-<h4 id="orgheadline8"><span class="section-number-4">3.1.4</span> Python code doing the job</h4>
-<div class="outline-text-4" id="text-3-1-4">
+<div id="outline-container-orgheadline9" class="outline-3">
+<h3 id="orgheadline9"><span class="section-number-3">3.2</span> Python code doing the job</h3>
+<div class="outline-text-3" id="text-3-2">
 <p>
 We are going to solve the standard H &amp; H model using the Neumann boundary conditions with \(\alpha = \beta = 0\) ("sealed ends"). We start by an <code>IPython</code> session&#x2014;but it wokrs as well with a classical <code>Python</code> session&#x2014;loading the two main modules we are going on a regular basis, <code>numpy</code> and <code>pylab</code> a sub-module of <code>matplotlib</code>:
 </p>
@@ -1014,9 +1020,9 @@ Before going further, writing a couple of functions abstracting the many pieces 
 </div>
 </div>
 
-<div id="outline-container-orgheadline9" class="outline-4">
-<h4 id="orgheadline9"><span class="section-number-4">3.1.5</span> Some functions definitions</h4>
-<div class="outline-text-4" id="text-3-1-5">
+<div id="outline-container-orgheadline10" class="outline-3">
+<h3 id="orgheadline10"><span class="section-number-3">3.3</span> Some functions definitions</h3>
+<div class="outline-text-3" id="text-3-3">
 <p>
 We want a function that takes axon geometrical parameters&#x2014;radius and length&#x2014;, simulation time, space and time steps and applied current as formal parameters and for which all the other parameters (reversal potentials, conductances, etc) are set. If we want to be able to change one or several of these other parameters, it is worth exploiting one of the great features of <a href="https://en.wikipedia.org/wiki/Python_syntax_and_semantics">Python</a>: is supports <a href="https://en.wikipedia.org/wiki/Closure_(computer_programming)">lexical closures</a>; and that allows us to write functions returning other functions. That's what we will do here (remark that all the functions previously defined are reused directly, except <code>F_V</code> since the necessary parameters are in the lexical scope of the function definition).
 </p>
@@ -1194,7 +1200,7 @@ Once this kind of function has been defined <b>the first thing to do</b> is to c
 <pre class="src src-python" id="orgsrcblock31">D1,r1,lambda1,sim1 = mk_cable_fcts()
 D1(1e-4)
 r1(1e-4,5e-3,0.025)
-v1,n1,m1,h1 = sim1(1e-4,2,15,5e-3,0.025,1000,2)
+v1,n1,m1,h1 = sim1(1e-4,2,20,5e-3,0.025,1000,2)
 for i in range(0,442,40):
     plt.plot(v1[i],color='black',lw=2)
 </pre>
@@ -1203,6 +1209,151 @@ for i in range(0,442,40):
 <p>
 The results are not shown since they are identical to the previous ones but you are invited to check for yourself.
 </p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgheadline13" class="outline-2">
+<h2 id="orgheadline13"><span class="section-number-2">4</span> Numerical investigation of the radius effect on the extracellular potential</h2>
+<div class="outline-text-2" id="text-4">
+<p>
+Equation 10 shows an explicite axon's radius square but says nothing on the effect of radius change on \(\Delta{}V_m\). If we use our newly developped code to get the picture with an axon of 4 \(\mu{}m\) diameter we see that:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock32">D1(4e-4)/D1(1e-4)
+</pre>
+</div>
+
+<pre class="example">
+4.0
+</pre>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock33">lambda1(4e-4)/lambda1(1e-4)
+</pre>
+</div>
+
+<pre class="example">
+2.0
+</pre>
+
+<p>
+The length constant is multiplied by 2, the diffusion coefficient by 4 so we can simulate a cable twice as long with a space step twice as large while keeping the same \(r\) value. Let's do it (we increase the stimulation amplitude also):
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock34">v4,n4,m4,h4 = sim1(4e-4,4,20,2*5e-3,0.025,2000,2)
+</pre>
+</div>
+
+<p>
+We get a graph similar to the one we got with the 1 \(\mu{}m\) radius axon with (result not shown):
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock35">xx = np.arange(v4.shape[1])*2*5e-3
+for i in range(0,442,40):
+    plt.plot(xx,v4[i],color='black',lw=2)
+plt.xlabel('Position (cm)')
+plt.ylabel(r'$\Delta{}V_m$ (mV)')
+</pre>
+</div>
+
+<p>
+To compare the spatial extensions, let us extract the time at which the spikes peaks at a distance of 1 cm:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock36">index_1_mu = np.argmax(v1[:,200])
+index_4_mu = np.argmax(v4[:,100])
+</pre>
+</div>
+
+<p>
+A simple graph shows then what Goldstein and Rall (1974, <i>Biophys J</i> <b>14</b>:731-757) established with a dimensional analysis: <i>the spatial extension on an action potential is proportional to the square root of the axon's radius</i>.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock37">plt.plot(np.arange(v1.shape[1])*5e-3,v1[index_1_mu],lw=2)
+plt.plot(np.arange(v4.shape[1])*2*5e-3,v4[index_4_mu],lw=2)
+plt.xlim(0.5,1.5)
+plt.xlabel('Position (cm)')
+plt.ylabel(r'$\Delta{}V_m$ (mV)')
+</pre>
+</div>
+
+
+<div class="figure">
+<p><img src="figsL1/voltage_spatial_profile_comparison.png" alt="voltage_spatial_profile_comparison.png" />
+</p>
+<p><span class="figure-number">Figure 3:</span> Spatial profile of the membrane voltage for an axon whose radius is 1 \(\mu{}m\) (red) and an axon whose radius is 4 \(\mu{}m\) (blue).</p>
+</div>
+</div>
+
+<div id="outline-container-orgheadline12" class="outline-3">
+<h3 id="orgheadline12"><span class="section-number-3">4.1</span> A fast way to do the job</h3>
+<div class="outline-text-3" id="text-4-1">
+<p>
+At that stage we could simulate a lot of cases with different radii, get the corresponding voltage profiles and plug those in equation 10 to get the peak (in absolute value) extra-cellular voltages at various distances between the electrode and the axon. But we can exploit the square root relation between radius and spatial extension to get all the profiles we need from a single one. We can indeed make a cubic-spline interpolation of the first profile we obtained, say when the spike is almost all the way to the right like here:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock38">plt.plot(np.arange(v1.shape[1])*5e-3,v1[-1],lw=2)
+plt.xlabel('Position (cm)')
+plt.ylabel(r'$\Delta{}V_m$ (mV)')
+</pre>
+</div>
+
+
+<div class="figure">
+<p><img src="figsL1/prototypical_profile.png" alt="prototypical_profile.png" />
+</p>
+<p><span class="figure-number">Figure 4:</span> Prototypical profile used for interpolation</p>
+</div>
+
+<p>
+We then define a function returning the membrane potential at a given position based on a cubic spline interpolation alowing the axon radius, as well as the derivative, to be specified. The location of the peak of the action potential is set at 0. We are going to perform interpolation using the <code>interpolate</code> sub-module of <code>scipy</code>:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock39">def spike(x,a=1.0,der=0,ext=1,
+          xx=(np.arange(v1.shape[1])-np.argmax(v1[-1]))*50,
+          yy=v1[-1]):
+    from scipy import interpolate
+    tck = interpolate.splrep(xx*np.sqrt(a),yy)
+    return interpolate.splev(x,tck,der=der,ext=ext)
+</pre>
+</div>
+
+<p>
+We check that the function works:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock40">xx = np.linspace(-7000,2000,9501)
+plt.plot(xx,spike(xx,2),color='red',lw=2)
+plt.plot(xx,spike(xx),color='black',lw=2)
+plt.plot(xx,spike(xx,0.5),color='blue',lw=2)
+plt.xlabel(r'Position ($\mu{}$m)')
+plt.ylabel(r'$\Delta{}V_m$ (mV)')
+</pre>
+</div>
+
+
+<div class="figure">
+<p><img src="figsL1/spike_check.png" alt="spike_check.png" />
+</p>
+<p><span class="figure-number">Figure 5:</span> Membrane voltage profiles for different axon radii: 0.5 \(\mu{}m\) (blue), 1 \(\mu{}m\) (black), 2 \(\mu{}m\) (red).</p>
 </div>
 </div>
 </div>
@@ -1221,7 +1372,7 @@ Tuckwell follows very closely&#x2014;with due citations&#x2014;the treatment of 
 <div id="postamble" class="status">
 <p class="date">Date: <span class="timestamp-wrapper"><span class="timestamp">&lt;2016-01-14 jeu.&gt;</span></span></p>
 <p class="author">Author: Christophe Pouzat</p>
-<p class="date">Created: 2016-01-17 dim. 18:39</p>
+<p class="date">Created: 2016-01-17 dim. 21:05</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
