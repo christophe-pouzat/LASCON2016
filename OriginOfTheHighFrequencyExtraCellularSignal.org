@@ -1,3 +1,4 @@
+# -*- org-export-babel-evaluate: nil; ispell-local-dictionary: "american" -*-
 #+OPTIONS: ':nil *:t -:t ::t <:t H:3 \n:nil ^:nil arch:headline
 #+OPTIONS: author:t c:nil creator:nil d:(not "LOGBOOK") date:t e:t
 #+OPTIONS: email:nil f:t inline:t num:t p:nil pri:nil prop:nil stat:t
@@ -109,7 +110,7 @@ At that stage, in order to go further, we need an explicit expression or value f
 
 * Numerical integration of the H & H equation
 
-We follow here the exposition of Tuckwell (1988) /Introduction to theoretical neurobiology. Volume 2./ CUP, pp 54-70. We want to solve the following set of equations:
+We follow here the exposition of Tuckwell (1988) /Introduction to theoretical neurobiology. Volume 2./ CUP, pp 54-70[fn:Ames1977]. We want to solve the following set of equations:
 
 \begin{align}
     C_m \, \frac{\partial V_m}{\partial t} &= \frac{a \sigma_i}{2} \frac{\partial^2 V_m}{\partial x^2} + \overline{g}_K n^4 (V_K-V_m) + \overline{g}_{Na} m^3 h (V_{Na}-V_m) + g_l (V_l - V_m) + I_A \, , \label{eq:HH-PDE}\tag{11}\\
@@ -732,3 +733,5 @@ def lees_method(a, axon_length, sim_time,
         VA[i] = solve_banded((1,1),AB,axonB)
     return VA
 #+END_SRC
+
+[fn:Ames1977] Tuckwell follows very closely---with due citations---the treatment of William F. Ames (1977) /NUMERICAL METHODS FOR PARTIAL DIFFERENTIAL EQUATIONS/ Academic Press.

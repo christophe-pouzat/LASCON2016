@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2016-01-16 sam. 15:52 -->
+<!-- 2016-01-17 dim. 15:33 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="viewport" content="width=device-width, initial-scale=1" />
 <title>Origin Of The (High Frequency) Extra-cellular Signal</title>
@@ -323,7 +323,7 @@ At that stage, in order to go further, we need an explicit expression or value f
 <h2 id="orgheadline10"><span class="section-number-2">3</span> Numerical integration of the H &amp; H equation</h2>
 <div class="outline-text-2" id="text-3">
 <p>
-We follow here the exposition of Tuckwell (1988) <i>Introduction to theoretical neurobiology. Volume 2.</i> CUP, pp 54-70. We want to solve the following set of equations:
+We follow here the exposition of Tuckwell (1988) <i>Introduction to theoretical neurobiology. Volume 2.</i> CUP, pp 54-70<sup><a id="fnr.1" class="footref" href="#fn.1">1</a></sup>. We want to solve the following set of equations:
 </p>
 
 \begin{align}
@@ -334,7 +334,7 @@ We follow here the exposition of Tuckwell (1988) <i>Introduction to theoretical 
 \end{align}
 
 <p>
-where \(C_m\) is the membrane capacitance per unit area [F/cm\(^2\)]; \(\overline{g}_K\), \(\overline{g}_{Na}\) and \(g_l\) are the potassium, sodium and leak conductances per unit area [S/cm\(^2\)]; \(V_K\), \(V_{Na}\) and \(V_l\) are the potassium, sodium and leak currents reversal potentials [mV] and \(I_a\) is "externally" applied current per unit area [mA/cm\(^2\)]. 
+where \(C_m\) is the membrane capacitance per unit area [F/cm\(^2\)]; \(\overline{g}_K\), \(\overline{g}_{Na}\) and \(g_l\) are the potassium, sodium and leak conductances per unit area [S/cm\(^2\)]; \(V_K\), \(V_{Na}\) and \(V_l\) are the potassium, sodium and leak currents reversal potentials [mV] and \(I_a\) is "externally" applied current per unit area [mA/cm\(^2\)] and all the \(\alpha\) and \(\beta\) function are in [1/ms]. 
 </p>
 </div>
 
@@ -780,7 +780,7 @@ We define next <code>F_V</code> corresponding to the \(F_1\) of equation 15. Thi
 
 <pre class="src src-python" id="orgsrcblock16">def F_V(v,n,m,h,Ia):
     GNa, GK, GL = 120.0, 36.0, 0.3 # H &amp; H 1952
-    ENa, EK, EL = 115.0, -12.0, 10.613 # H &amp; H 1952
+    ENa, EK, EL = 115.0, -12.0, 10.5987 # H &amp; H 1952
     return (GK*n**4*(EK-v)+GNa*m**3*h*(ENa-v)+GL*(EL-v)+Ia)/Cm
 vF_V = np.vectorize(F_V)
 </pre>
@@ -817,29 +817,29 @@ lambda_rest
 </pre>
 
 <p>
-So our length constant is roughly 500 \(\mu{}m\). We will pick a space discretization step of 50 \(\mu{}m\) (5 \(\times 10^{-3}\) cm) equal to a tenth of the length constant and choose a cable length of 2000 \(\mu{}m\) (0.2 cm), four times the length constant. We then choose our time discretization step such that the value \(r\) defined by equation 23 is not too large, say 4 (the reason for using an implicit method like the <a href="https://en.wikipedia.org/wiki/Crank%E2%80%93Nicolson_method">Crank-Nicolson</a> method instead of an explicit one in that the latter is stable only if \(r < 0.5\)). That gives us for \(\Delta{}t\) (remember that our <code>D</code> above is in cm\(^2\) / \(\mu{}s\) and we want a result in \(ms\)):
+So our length constant is roughly 500 \(\mu{}m\). We will pick a space discretization step of 50 \(\mu{}m\) (5 \(\times 10^{-3}\) cm) equal to a tenth of the length constant and choose a cable length of 20000 \(\mu{}m\) (2 cm), forty times the length constant. We then choose our time discretization step such that the value \(r\) defined by equation 23 is not too large, say 4 (the reason for using an implicit method like the <a href="https://en.wikipedia.org/wiki/Crank%E2%80%93Nicolson_method">Crank-Nicolson</a> method instead of an explicit one in that the latter is stable only if \(r < 0.5\)). That gives us for \(\Delta{}t\) (remember that our <code>D</code> above is in cm\(^2\) / \(\mu{}s\) and we want a result in \(ms\)):
 </p>
 
 <div class="org-src-container">
 
 <pre class="src src-python" id="orgsrcblock19">Delta_x = 5e-3
-r = 4
+r = 2
 Delta_t = r*Delta_x**2/D/1000
 Delta_t
 </pre>
 </div>
 
 <pre class="example">
-0.0708
+0.0354
 </pre>
 
 <p>
-To be on the safe side, we will pick a \(\Delta{}t\) of 0.05 ms:
+To be on the safe side, we will pick a \(\Delta{}t\) of 0.025 ms:
 </p>
 
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock20">Delta_t = 0.05
+<pre class="src src-python" id="orgsrcblock20">Delta_t = 0.025
 </pre>
 </div>
 
@@ -849,8 +849,8 @@ We now need 4 vectors containing the membrane voltage (deviation) and the value 
 
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock21">L = 0.2
-M = 0.2/Delta_x
+<pre class="src src-python" id="orgsrcblock21">L = 2
+M = L/Delta_x
 v_0 = np.zeros(M+1)
 n_0 = np.ones(M+1)*n_inf(0)
 m_0 = np.ones(M+1)*m_inf(0)
@@ -865,7 +865,7 @@ We also need a vector of the same length with the injected current density at ea
 <div class="org-src-container">
 
 <pre class="src src-python" id="orgsrcblock22">Ia_0 = np.zeros(M+1)
-Ia_0[0] = 1e4
+Ia_0[0] = 1000.0
 </pre>
 </div>
 
@@ -919,7 +919,7 @@ A[2,-2] = -r # lower diagonal
 </div>
 
 <p>
-We now define a function doing one Lees' step since this function is going to be called often, rather than having it initializing its results we pass the vectors that will contain these results are formal parameters (so we do not have to do time consuming memory allocation at each step). The function needs moreover the present and previous (or old) values of v, n, m and h as well as Ia. The function assumes that the banded matrix <code>A</code> above is already available in the environment:
+We now define a function doing one Lees' step. The function needs the present and previous (or old) values of v, n, m and h as well as Ia. The function assumes that the banded matrix <code>A</code> above is already available in the environment and loads function <code>solve_banded</code> from <code>scipy.linalg</code> sub-module:
 </p>
 
 <div class="org-src-container">
@@ -937,7 +937,7 @@ We now define a function doing one Lees' step since this function is going to be
     h_new = np.copy(h_present)+Delta_t*vF_h(v_extra,h_extra)
     reaction_term = Delta_t*vF_V(v_extra,n_extra,m_extra,h_extra,Ia_extra)
     diffusion_term = (1-r)*np.copy(v_present)
-    diffusion_term[1:-1] += v_present[0:-2] + v_present[2:]
+    diffusion_term[1:-1] += (v_present[0:-2] + v_present[2:])*r/2.0
     diffusion_term[0] += r*v_present[1]
     diffusion_term[-1] += r*v_present[-2]
     v_new = solve_banded((1,1),A,reaction_term+diffusion_term)
@@ -945,9 +945,50 @@ We now define a function doing one Lees' step since this function is going to be
 </pre>
 </div>
 
+<p>
+We make one step with:
+</p>
+
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock27">def lees_method(a, axon_length, sim_time,
+<pre class="src src-python" id="orgsrcblock27">v_2,n_2,m_2,h_2 = lees_step(v_0,n_0,m_0,h_0,Ia_0,v_1,n_1,m_1,h_1,Ia_0)
+</pre>
+</div>
+
+<p>
+Now 200 more steps stopping the stimulation after 0.2 ms or 4 steps:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock28">v_M = np.zeros((2002,int(M+1)))
+v_M[0] = v_0
+v_M[1] = v_1
+n_M = np.zeros((2002,int(M+1)))
+n_M[0] = n_0
+n_M[1] = n_1
+m_M = np.zeros((2002,int(M+1)))
+m_M[0] = m_0
+m_M[1] = m_1
+h_M = np.zeros((2002,int(M+1)))
+h_M[0] = h_0
+h_M[1] = h_1
+for i in range(2,2002):
+    if i &lt; 80:
+        v_M[i,:],n_M[i,:],m_M[i,:],h_M[i,:] = lees_step(v_M[i-2,:],n_M[i-2,:],m_M[i-2,:],h_M[i-2,:],Ia_0,
+                                                        v_M[i-1,:],n_M[i-1,:],m_M[i-1,:],h_M[i-1,:],Ia_0)
+    if i == 80:
+        v_M[i,:],n_M[i,:],m_M[i,:],h_M[i,:] = lees_step(v_M[i-2,:],n_M[i-2,:],m_M[i-2,:],h_M[i-2,:],Ia_0,
+                                                        v_M[i-1,:],n_M[i-1,:],m_M[i-1,:],h_M[i-1,:],0)
+    if i &gt; 80:
+        v_M[i,:],n_M[i,:],m_M[i,:],h_M[i,:] = lees_step(v_M[i-2,:],n_M[i-2,:],m_M[i-2,:],h_M[i-2,:],0,
+                                                        v_M[i-1,:],n_M[i-1,:],m_M[i-1,:],h_M[i-1,:],0)
+</pre>
+</div>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock29">def lees_method(a, axon_length, sim_time,
                 m, n, Iapp):
     """ Computes the spatiotemporal evolution of membrane potential of
         an axon.
@@ -1014,7 +1055,7 @@ We now define a function doing one Lees' step since this function is going to be
     vF_h = np.vectorize(F_h)
     def F_V(v,n,m,h,Ia):
         GNa, GK, GL = 120.0, 36.0, 0.3 # H &amp; H 1952
-        ENa, EK, EL = 115.0, -12.0, 10.613 # H &amp; H 1952
+        ENa, EK, EL = 115.0, -12.0, 10.5987 # H &amp; H 1952
         return (GK*n**4*(EK-v)+GNa*m**3*h*(ENa-v)+GL*(EL-v)+Ia)/Cm
     vF_V = np.vectorize(F_V)
     # Simulation time and rod length
@@ -1099,11 +1140,21 @@ We now define a function doing one Lees' step since this function is going to be
 </div>
 </div>
 </div>
+<div id="footnotes">
+<h2 class="footnotes">Footnotes: </h2>
+<div id="text-footnotes">
+
+<div class="footdef"><sup><a id="fn.1" class="footnum" href="#fnr.1">1</a></sup> <div class="footpara"><p class="footpara">
+Tuckwell follows very closely&#x2014;with due citations&#x2014;the treatment of William F. Ames (1977) <i>NUMERICAL METHODS FOR PARTIAL DIFFERENTIAL EQUATIONS</i> Academic Press.
+</p></div></div>
+
+
 </div>
+</div></div>
 <div id="postamble" class="status">
 <p class="date">Date: <span class="timestamp-wrapper"><span class="timestamp">&lt;2016-01-14 jeu.&gt;</span></span></p>
 <p class="author">Author: Christophe Pouzat</p>
-<p class="date">Created: 2016-01-16 sam. 15:52</p>
+<p class="date">Created: 2016-01-17 dim. 15:33</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
