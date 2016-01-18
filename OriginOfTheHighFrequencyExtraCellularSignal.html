@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2016-01-17 dim. 22:27 -->
+<!-- 2016-01-18 lun. 18:38 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="viewport" content="width=device-width, initial-scale=1" />
 <title>Origin Of The (High Frequency) Extra-cellular Signal</title>
@@ -565,12 +565,13 @@ We are going to solve the standard H &amp; H model using the Neumann boundary co
 <pre class="src src-python">import numpy as np
 import matplotlib.pylab as plt
 plt.ion()
+#%matplotlib inline
 plt.style.use('ggplot')
 </pre>
 </div>
 
 <p>
-The two last commands give us <i>interactive</i> graphics (<code>plt.ion</code>) and a nicer default style for the graphs (<code>plt.style.use('ggplot')</code>). We then assign a few variables considering an axon with a radius \(a\) of 1 \(\mu{}m\) that is \(10^{-4}\) cm (for quantitative data on CNS axons diameters, see <a href="http://www.jneurosci.org/content/32/2/626.abstract">Perge et al (2013)</a>):
+The three last commands give us <i>interactive</i> graphics (<code>plt.ion</code>) or <i>inline</i> graphics when using the <code>jupyter notebook</code> (in that case, comment the previous line with "#" and uncomment the following one) and a nicer default style for the graphs (<code>plt.style.use('ggplot')</code>). We then assign a few variables considering an axon with a radius \(a\) of 1 \(\mu{}m\) that is \(10^{-4}\) cm (for quantitative data on CNS axons diameters, see <a href="http://www.jneurosci.org/content/32/2/626.abstract">Perge et al (2013)</a>):
 </p>
 
 <div class="org-src-container">
@@ -1372,7 +1373,7 @@ Tuckwell follows very closely&#x2014;with due citations&#x2014;the treatment of 
 <div id="postamble" class="status">
 <p class="date">Date: <span class="timestamp-wrapper"><span class="timestamp">&lt;2016-01-14 jeu.&gt;</span></span></p>
 <p class="author">Author: Christophe Pouzat</p>
-<p class="date">Created: 2016-01-17 dim. 22:27</p>
+<p class="date">Created: 2016-01-18 lun. 18:38</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

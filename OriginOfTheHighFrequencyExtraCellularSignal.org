@@ -278,10 +278,11 @@ We are going to solve the standard H & H model using the Neumann boundary condit
 import numpy as np
 import matplotlib.pylab as plt
 plt.ion()
+#%matplotlib inline
 plt.style.use('ggplot')
 #+END_SRC
 
-The two last commands give us /interactive/ graphics (=plt.ion=) and a nicer default style for the graphs (=plt.style.use('ggplot')=). We then assign a few variables considering an axon with a radius $a$ of 1 $\mu{}m$ that is $10^{-4}$ cm (for quantitative data on CNS axons diameters, see [[http://www.jneurosci.org/content/32/2/626.abstract][Perge et al (2013)]]):
+The three last commands give us /interactive/ graphics (=plt.ion=) or /inline/ graphics when using the =jupyter notebook= (in that case, comment the previous line with "#" and uncomment the following one) and a nicer default style for the graphs (=plt.style.use('ggplot')=). We then assign a few variables considering an axon with a radius $a$ of 1 $\mu{}m$ that is $10^{-4}$ cm (for quantitative data on CNS axons diameters, see [[http://www.jneurosci.org/content/32/2/626.abstract][Perge et al (2013)]]):
 
 #+NAME: assign-a-axon-radius
 #+BEGIN_SRC python :eval no-export :results silent
