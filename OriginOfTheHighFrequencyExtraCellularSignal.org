@@ -486,7 +486,7 @@ lambda_rest
 #+RESULTS: lambda_rest
 : 0.045667548060889344
 
-So our length constant is roughly 500 $\mu{}m$. We will pick a space discretization step of 50 $\mu{}m$ (5 $\times 10^{-3}$ cm) equal to a tenth of the length constant and choose a cable length of 20000 $\mu{}m$ (2 cm), forty times the length constant. We then choose our time discretization step such that the value $r$ defined by equation 23 is not too large, say 4 (the reason for using an implicit method like the [[https://en.wikipedia.org/wiki/Crank–Nicolson_method][Crank-Nicolson]] method instead of an explicit one in that the latter is stable only if $r \le 0.5$). That gives us for $\Delta{}t$ (remember that our =D= above is in cm$^2$ / $\mu{}s$ and we want a result in $ms$):
+So our length constant is roughly 500 $\mu{}m$. We will pick a space discretization step of 50 $\mu{}m$ (5 $\times 10^{-3}$ cm) equal to a tenth of the length constant and choose a cable length of 20000 $\mu{}m$ (2 cm), forty times the length constant. We then choose our time discretization step such that the value $r$ defined by equation 23 is not too large, say 2 (the reason for using an implicit method like the [[https://en.wikipedia.org/wiki/Crank–Nicolson_method][Crank-Nicolson]] method instead of an explicit one in that the latter is stable only if $r \le 0.5$). That gives us for $\Delta{}t$ (remember that our =D= above is in cm$^2$ / $\mu{}s$ and we want a result in $ms$):
 
 #+NAME: Delta_t-and-Delta_x
 #+BEGIN_SRC python :eval no-export :exports both 

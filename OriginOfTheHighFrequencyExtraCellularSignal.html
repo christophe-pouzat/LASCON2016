@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2016-01-17 dim. 21:05 -->
+<!-- 2016-01-17 dim. 22:27 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="viewport" content="width=device-width, initial-scale=1" />
 <title>Origin Of The (High Frequency) Extra-cellular Signal</title>
@@ -824,7 +824,7 @@ lambda_rest
 </pre>
 
 <p>
-So our length constant is roughly 500 \(\mu{}m\). We will pick a space discretization step of 50 \(\mu{}m\) (5 \(\times 10^{-3}\) cm) equal to a tenth of the length constant and choose a cable length of 20000 \(\mu{}m\) (2 cm), forty times the length constant. We then choose our time discretization step such that the value \(r\) defined by equation 23 is not too large, say 4 (the reason for using an implicit method like the <a href="https://en.wikipedia.org/wiki/Crank%E2%80%93Nicolson_method">Crank-Nicolson</a> method instead of an explicit one in that the latter is stable only if \(r \le 0.5\)). That gives us for \(\Delta{}t\) (remember that our <code>D</code> above is in cm\(^2\) / \(\mu{}s\) and we want a result in \(ms\)):
+So our length constant is roughly 500 \(\mu{}m\). We will pick a space discretization step of 50 \(\mu{}m\) (5 \(\times 10^{-3}\) cm) equal to a tenth of the length constant and choose a cable length of 20000 \(\mu{}m\) (2 cm), forty times the length constant. We then choose our time discretization step such that the value \(r\) defined by equation 23 is not too large, say 2 (the reason for using an implicit method like the <a href="https://en.wikipedia.org/wiki/Crank%E2%80%93Nicolson_method">Crank-Nicolson</a> method instead of an explicit one in that the latter is stable only if \(r \le 0.5\)). That gives us for \(\Delta{}t\) (remember that our <code>D</code> above is in cm\(^2\) / \(\mu{}s\) and we want a result in \(ms\)):
 </p>
 
 <div class="org-src-container">
@@ -1372,7 +1372,7 @@ Tuckwell follows very closely&#x2014;with due citations&#x2014;the treatment of 
 <div id="postamble" class="status">
 <p class="date">Date: <span class="timestamp-wrapper"><span class="timestamp">&lt;2016-01-14 jeu.&gt;</span></span></p>
 <p class="author">Author: Christophe Pouzat</p>
-<p class="date">Created: 2016-01-17 dim. 21:05</p>
+<p class="date">Created: 2016-01-17 dim. 22:27</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
