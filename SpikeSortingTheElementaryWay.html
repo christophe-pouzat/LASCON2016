@@ -1,0 +1,1407 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2016-01-18 lun. 20:26 -->
+<meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta  name="viewport" content="width=device-width, initial-scale=1" />
+<title>Spike Sorting The Elementary Way</title>
+<meta  name="generator" content="Org-mode" />
+<meta  name="author" content="Christophe Pouzat" />
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  pre.src-sh:before    { content: 'sh'; }
+  pre.src-bash:before  { content: 'sh'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-R:before     { content: 'R'; }
+  pre.src-perl:before  { content: 'Perl'; }
+  pre.src-java:before  { content: 'Java'; }
+  pre.src-sql:before   { content: 'SQL'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  /*]]>*/-->
+</style>
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2013 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        displayAlign: "center",
+        displayIndent: "0em",
+
+        "HTML-CSS": { scale: 100,
+                        linebreaks: { automatic: "false" },
+                        webFont: "TeX"
+                       },
+        SVG: {scale: 100,
+              linebreaks: { automatic: "false" },
+              font: "TeX"},
+        NativeMML: {scale: 100},
+        TeX: { equationNumbers: {autoNumber: "AMS"},
+               MultLineWidth: "85%",
+               TagSide: "right",
+               TagIndent: ".8em"
+             }
+});
+</script>
+<script type="text/javascript"
+        src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+</head>
+<body>
+<div id="content">
+<h1 class="title">Spike Sorting The Elementary Way</h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#orgheadline15">1. Individual function definitions</a>
+<ul>
+<li><a href="#orgheadline1">1.1. <code>plot_data_list</code></a></li>
+<li><a href="#orgheadline2">1.2. <code>peak</code></a></li>
+<li><a href="#orgheadline3">1.3. <code>cut_sgl_evt</code></a></li>
+<li><a href="#orgheadline4">1.4. <code>mk_events</code></a></li>
+<li><a href="#orgheadline5">1.5. <code>plot_events</code></a></li>
+<li><a href="#orgheadline6">1.6. <code>plot_data_list_and_detection</code></a></li>
+<li><a href="#orgheadline7">1.7. <code>mk_noise</code></a></li>
+<li><a href="#orgheadline8">1.8. <code>mad</code></a></li>
+<li><a href="#orgheadline11">1.9. <code>mk_aligned_events</code></a>
+<ul>
+<li><a href="#orgheadline9">1.9.1. The jitter: A worked out example</a></li>
+<li><a href="#orgheadline10">1.9.2. Function definition</a></li>
+</ul>
+</li>
+<li><a href="#orgheadline12">1.10. <code>mk_center_dictionary</code></a></li>
+<li><a href="#orgheadline13">1.11. <code>classify_and_align_evt</code></a></li>
+<li><a href="#orgheadline14">1.12. <code>predict_data</code></a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orgheadline15" class="outline-2">
+<h2 id="orgheadline15"><span class="section-number-2">1</span> Individual function definitions</h2>
+<div class="outline-text-2" id="text-1">
+<p>
+Short function are presented in 'one piece'. The longer ones are presented with their <code>docstring</code> first followed by the body of the function. To get the actual function you should replace the <code>&lt;&lt;docstring&gt;&gt;</code> appearing in the function definition by the actual <code>doctring</code>. This is just a direct application of the <a href="http://en.wikipedia.org/wiki/Literate_programming">literate programming</a> paradigm. More complicated functions are split into more parts with their own descriptions.
+</p>
+</div>
+
+<div id="outline-container-orgheadline1" class="outline-3">
+<h3 id="orgheadline1"><span class="section-number-3">1.1</span> <code>plot_data_list</code></h3>
+<div class="outline-text-3" id="text-1-1">
+<p>
+We define a function, <code>plot_data_list</code>, making our raw data like displaying command lighter, starting with the <code>docstring</code>:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock1">"""Plots data when individual recording channels make up elements
+of a list.
+
+Parameters
+----------
+data_list: a list of numpy arrays of dimension 1 that should all
+           be of the same length (not checked).
+time_axes: an array with as many elements as the components of
+           data_list. The time values of the abscissa.
+linewidth: the width of the lines drawing the curves.
+color: the color of the curves.
+
+Returns
+-------
+Nothing is returned, the function is used for its side effect: a
+plot is generated. 
+"""
+</pre>
+</div>
+<p>
+Then the definition of the function per se:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock2">def plot_data_list(data_list,
+                   time_axes,
+                   linewidth=0.2,
+                   color='black'):
+    &lt;&lt;plot_data_list-doctring&gt;&gt;
+    nb_chan = len(data_list)
+    data_min = [np.min(x) for x in data_list]
+    data_max = [np.max(x) for x in data_list]
+    display_offset = list(np.cumsum(np.array([0] +
+                                             [data_max[i]-
+                                              data_min[i-1]
+                                             for i in
+                                             range(1,nb_chan)])))
+    for i in range(nb_chan):
+        plt.plot(time_axes,data_list[i]-display_offset[i],
+                 linewidth=linewidth,color=color)
+    plt.yticks([])
+    plt.xlabel("Time (s)")
+</pre>
+</div>
+</div>
+</div>
+
+
+
+<div id="outline-container-orgheadline2" class="outline-3">
+<h3 id="orgheadline2"><span class="section-number-3">1.2</span> <code>peak</code></h3>
+<div class="outline-text-3" id="text-1-2">
+<p>
+We define function <code>peak</code> which detects local maxima using an estimate of the derivative of the signal. Only putative maxima that are farther apart than <code>minimal_dist</code> sampling points are kept. The function returns a vector of indices. Its <code>docstring</code> is:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock3">"""Find peaks on one dimensional arrays.
+
+Parameters
+----------
+x: a one dimensional array on which scipy.signal.fftconvolve can
+   be called.
+minimal_dist: the minimal distance between two successive peaks.
+not_zero: the smallest value above which the absolute value of
+the derivative is considered not null.
+
+Returns
+-------
+An array of (peak) indices is returned.
+"""
+</pre>
+</div>
+<p>
+And the function per se:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock4">def peak(x, minimal_dist=15, not_zero=1e-3):
+    &lt;&lt;peak-docstring&gt;&gt;
+    ## Get the first derivative
+    dx = scipy.signal.fftconvolve(x,np.array([1,0,-1])/2.,'same') 
+    dx[np.abs(dx) &lt; not_zero] = 0
+    dx = np.diff(np.sign(dx))
+    pos = np.arange(len(dx))[dx &lt; 0]
+    return pos[:-1][np.diff(pos) &gt; minimal_dist]
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgheadline3" class="outline-3">
+<h3 id="orgheadline3"><span class="section-number-3">1.3</span> <code>cut_sgl_evt</code></h3>
+<div class="outline-text-3" id="text-1-3">
+<p>
+Function <code>mk_events</code> (defined next) that we will use directly will call  <code>cut_sgl_evt</code>. As its name says cuts a single event (an return a vector with the cuts on the different recording sites glued one after the other). Its <code>docstring</code> is:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock5">"""Cuts an 'event' at 'evt_pos' on 'data'.
+    
+Parameters
+----------
+evt_pos: an integer, the index (location) of the (peak of) the
+         event.
+data: a matrix whose rows contains the recording channels.
+before: an integer, how many points should be within the cut
+        before the reference index / time given by evt_pos.
+after: an integer, how many points should be within the cut
+       after the reference index / time given by evt_pos.
+    
+Returns
+-------
+A vector with the cuts on the different recording sites glued
+one after the other. 
+"""
+</pre>
+</div>
+<p>
+And the function per se:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock6">def cut_sgl_evt(evt_pos,data,before=14, after=30):
+    &lt;&lt;cut_sgl_evt-docstring&gt;&gt;
+    ns = data.shape[0] ## Number of recording sites
+    dl = data.shape[1] ## Number of sampling points
+    cl = before+after+1 ## The length of the cut
+    cs = cl*ns ## The 'size' of a cut
+    cut = np.zeros((ns,cl))
+    idx = np.arange(-before,after+1)
+    keep = idx + evt_pos
+    within = np.bitwise_and(0 &lt;= keep, keep &lt; dl)
+    kw = keep[within]
+    cut[:,within] = data[:,kw].copy()
+    return cut.reshape(cs)
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgheadline4" class="outline-3">
+<h3 id="orgheadline4"><span class="section-number-3">1.4</span> <code>mk_events</code></h3>
+<div class="outline-text-3" id="text-1-4">
+<p>
+Function <code>mk_events</code> takes a vector of indices as its first argument and returns a matrix with has many rows as events. Its <code>docstring is</code>
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock7">"""Make events matrix out of data and events positions.
+    
+Parameters
+----------
+positions: a vector containing the indices of the events.
+data: a matrix whose rows contains the recording channels.
+before: an integer, how many points should be within the cut
+        before the reference index / time given by evt_pos.
+after: an integer, how many points should be within the cut
+       after the reference index / time given by evt_pos.
+    
+Returns
+-------
+A matrix with as many rows as events and whose rows are the cuts
+on the different recording sites glued one after the other. 
+"""
+</pre>
+</div>
+<p>
+And the function per se:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock8">def mk_events(positions, data, before=14, after=30):
+    &lt;&lt;mk_events-docstring&gt;&gt;
+    res = np.zeros((len(positions),(before+after+1)*data.shape[0]))
+    for i,p in enumerate(positions):
+        res[i,:] = cut_sgl_evt(p,data,before,after)
+    return res
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgheadline5" class="outline-3">
+<h3 id="orgheadline5"><span class="section-number-3">1.5</span> <code>plot_events</code></h3>
+<div class="outline-text-3" id="text-1-5">
+<p>
+In order to facilitate events display, we define an event specific plotting function starting with its <code>docstring</code>:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock9">"""Plot events.
+    
+Parameters
+----------
+evts_matrix: a matrix of events. Rows are events. Cuts from
+             different recording sites are glued one after the
+             other on each row.
+n_plot: an integer, the number of events to plot (if 'None',
+        default, all are shown).
+n_channels: an integer, the number of recording channels.
+events_color: the color used to display events. 
+events_lw: the line width used to display events. 
+show_median: should the median event be displayed?
+median_color: color used to display the median event.
+median_lw: line width used to display the median event.
+show_mad: should the MAD be displayed?
+mad_color: color used to display the MAD.
+mad_lw: line width used to display the MAD.
+
+Returns
+-------
+Noting, the function is used for its side effect.
+"""
+</pre>
+</div>
+<p>
+And the function per se:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock10">def plot_events(evts_matrix, 
+                n_plot=None,
+                n_channels=4,
+                events_color='black', 
+                events_lw=0.1,
+                show_median=True,
+                median_color='red',
+                median_lw=0.5,
+                show_mad=True,
+                mad_color='blue',
+                mad_lw=0.5):
+    &lt;&lt;plot_events-docstring&gt;&gt;
+    if n_plot is None:
+        n_plot = evts_matrix.shape[0]
+
+    cut_length = evts_matrix.shape[1] // n_channels 
+    
+    for i in range(n_plot):
+        plt.plot(evts_matrix[i,:], color=events_color, lw=events_lw)
+    if show_median:
+        MEDIAN = np.apply_along_axis(np.median,0,evts_matrix)
+        plt.plot(MEDIAN, color=median_color, lw=median_lw)
+
+    if show_mad:
+        MAD = np.apply_along_axis(mad,0,evts_matrix)
+        plt.plot(MAD, color=mad_color, lw=mad_lw)
+    
+    left_boundary = np.arange(cut_length,
+                              evts_matrix.shape[1],
+                              cut_length*2)
+    for l in left_boundary:
+        plt.axvspan(l,l+cut_length-1,
+                    facecolor='grey',alpha=0.5,edgecolor='none')
+    plt.xticks([])
+    return
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgheadline6" class="outline-3">
+<h3 id="orgheadline6"><span class="section-number-3">1.6</span> <code>plot_data_list_and_detection</code></h3>
+<div class="outline-text-3" id="text-1-6">
+<p>
+We define a function, <code>plot_data_list_and_detection</code>, making our data and detection displaying command lighter. Its <code>docstring</code>:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock11">"""Plots data together with detected events.
+    
+Parameters
+----------
+data_list: a list of numpy arrays of dimension 1 that should all
+           be of the same length (not checked).
+time_axes: an array with as many elements as the components of
+           data_list. The time values of the abscissa.
+evts_pos: a vector containing the indices of the detected
+          events.
+linewidth: the width of the lines drawing the curves.
+color: the color of the curves.
+
+Returns
+-------
+Nothing is returned, the function is used for its side effect: a
+plot is generated. 
+"""
+</pre>
+</div>
+<p>
+And the function:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock12">def plot_data_list_and_detection(data_list,
+                                 time_axes,
+                                 evts_pos,
+                                 linewidth=0.2,
+                                 color='black'):                             
+    &lt;&lt;plot_data_list_and_detection-docstring&gt;&gt;
+    nb_chan = len(data_list)
+    data_min = [np.min(x) for x in data_list]
+    data_max = [np.max(x) for x in data_list]
+    display_offset = list(np.cumsum(np.array([0] +
+                                             [data_max[i]-
+                                              data_min[i-1] for i in
+                                             range(1,nb_chan)])))
+    for i in range(nb_chan):
+        plt.plot(time_axes,data_list[i]-display_offset[i],
+                 linewidth=linewidth,color=color)
+        plt.plot(time_axes[evts_pos],
+                 data_list[i][evts_pos]-display_offset[i],'ro')
+    plt.yticks([])
+    plt.xlabel("Time (s)")
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgheadline7" class="outline-3">
+<h3 id="orgheadline7"><span class="section-number-3">1.7</span> <code>mk_noise</code></h3>
+<div class="outline-text-3" id="text-1-7">
+<p>
+Getting an estimate of the noise statistical properties is an essential ingredient to build respectable goodness of fit tests. In our approach "noise events" are essentially anything that is not an "event". I wrote essentially and not exactly since there is a little twist here which is the minimal distance we are willing to accept between the reference time of a noise event and the reference time of the last preceding and of the first following "event". We could think that keeping a cut length on each side would be enough. That would indeed be the case if <i>all</i> events were starting from and returning to zero within a cut. But this is not the case with the cuts parameters we chose previously (that will become clear soon). You might wonder why we chose so short a cut length then. Simply to avoid having to deal with too many superposed events which are the really bothering events for anyone wanting to do proper sorting. 
+To obtain our noise events we are going to use function <code>mk_noise</code> which takes the <i>same</i> arguments as function <code>mk_events</code> plus two numbers: 
+</p>
+<ul class="org-ul">
+<li><code>safety_factor</code> a number by which the cut length is multiplied and which sets the minimal distance between the reference times discussed in the previous paragraph.</li>
+<li><code>size</code> the maximal number of noise events one wants to cut (the actual number obtained might be smaller depending on the data length, the cut length, the safety factor and the number of events).</li>
+</ul>
+
+<p>
+We define now function <code>mk_noise</code> starting with its <code>docstring</code>:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock13">"""Constructs a noise sample.
+
+Parameters
+----------
+positions: a vector containing the indices of the events.
+data: a matrix whose rows contains the recording channels.
+before: an integer, how many points should be within the cut
+        before the reference index / time given by evt_pos.
+after: an integer, how many points should be within the cut
+       after the reference index / time given by evt_pos.
+safety_factor: a number by which the cut length is multiplied
+               and which sets the minimal distance between the 
+               reference times discussed in the previous
+               paragraph.
+size: the maximal number of noise events one wants to cut (the
+      actual number obtained might be smaller depending on the
+      data length, the cut length, the safety factor and the
+      number of events).
+    
+Returns
+-------
+A matrix with as many rows as noise events and whose rows are
+the cuts on the different recording sites glued one after the
+other. 
+"""
+</pre>
+</div>
+<p>
+And the function:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock14">def mk_noise(positions, data, before=14, after=30, safety_factor=2, size=2000):
+    &lt;&lt;mk_noise-docstring&gt;&gt;
+    sl = before+after+1 ## cut length
+    ns = data.shape[0] ## number of recording sites
+    i1 = np.diff(positions) ## inter-event intervals
+    minimal_length = round(sl*safety_factor)
+    ## Get next the number of noise sweeps that can be
+    ## cut between each detected event with a safety factor
+    nb_i = (i1-minimal_length)//sl
+    ## Get the number of noise sweeps that are going to be cut
+    nb_possible = min(size,sum(nb_i[nb_i&gt;0]))
+    res = np.zeros((nb_possible,sl*data.shape[0]))
+    ## Create next a list containing the indices of the inter event
+    ## intervals that are long enough
+    idx_l = [i for i in range(len(i1)) if nb_i[i] &gt; 0]
+    ## Make next an index running over the inter event intervals
+    ## from which at least one noise cut can be made
+    interval_idx = 0
+    ## noise_positions = np.zeros(nb_possible,dtype=numpy.int)
+    n_idx = 0
+    while n_idx &lt; nb_possible:
+        within_idx = 0 ## an index of the noise cut with a long enough
+                       ## interval
+        i_pos = positions[idx_l[interval_idx]] + minimal_length
+        ## Variable defined next contains the number of noise cuts
+        ## that can be made from the "currently" considered long-enough
+        ## inter event interval
+        n_at_interval_idx = nb_i[idx_l[interval_idx]]
+        while within_idx &lt; n_at_interval_idx and n_idx &lt; nb_possible:
+            res[n_idx,:]= cut_sgl_evt(int(i_pos),data,before,after)
+            ## noise_positions[n_idx] = i_pos
+            n_idx += 1
+            i_pos += sl
+            within_idx += 1
+        interval_idx += 1
+    ## return (res,noise_positions)
+    return res
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgheadline8" class="outline-3">
+<h3 id="orgheadline8"><span class="section-number-3">1.8</span> <code>mad</code></h3>
+<div class="outline-text-3" id="text-1-8">
+<p>
+We define the <code>mad</code> function in one piece since it is very short:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock15">def mad(x):
+    """Returns the Median Absolute Deviation of its argument.
+    """
+    return np.median(np.absolute(x - np.median(x)))*1.4826
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgheadline11" class="outline-3">
+<h3 id="orgheadline11"><span class="section-number-3">1.9</span> <code>mk_aligned_events</code></h3>
+<div class="outline-text-3" id="text-1-9">
+</div><div id="outline-container-orgheadline9" class="outline-4">
+<h4 id="orgheadline9"><span class="section-number-4">1.9.1</span> The jitter: A worked out example</h4>
+<div class="outline-text-4" id="text-1-9-1">
+<p>
+Function <code>mk_aligned_events</code> is somehow the "heavy part" of this document. Its job is to align events on their templates while taking care of two jitter sources: the sampling and the noise one. Rather than getting into a theoretical discussion, we illustrate the problem with one of the events detected on our data set. Cluster 1 is the cluster exhibiting the largest <a href="http://en.wikipedia.org/wiki/Jitter">sampling jitter</a> effects, since it has the largest time derivative, in absolute value, of its median event . This is clearly seen when we superpose the 50th event from this cluster with the median event (remember that we start numbering at 0). So we get first our estimate for center or template of cluster 1:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock16">c1_median = apply(np.median,0,evtsE[goodEvts,:][np.array(c10b)==1,:])
+</pre>
+</div>
+<p>
+And we do the plot (Fig. \ref{fig:JitterIllustrationCluster1Event50}):
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python">plt.plot(c1_median,color='red')
+plt.plot(evtsE[goodEvts,:][np.array(c10b)==1,:][50,:],color='black')
+</pre>
+</div>
+
+
+<div id="orgparagraph1" class="figure">
+<p><img src="img/locust-sorting-python/JitterIllustrationCluster1Event50.png" alt="JitterIllustrationCluster1Event50.png" />
+</p>
+<p><span class="figure-number">Figure 1:</span> The median event of cluster 1 (red) together with event 50 of the same cluster (black).</p>
+</div>
+
+<p>
+A Taylor expansion shows that if we write <i>g(t)</i> the observed 50th event, δ the sampling jitter and <i>f(t)</i> the actual waveform of the event then:
+</p>
+\begin{equation}
+g(t) = f(t+δ) + ε(t) \approx f(t) + δ \, f'(t) + δ^2/2 \, f''(t) + ε(t) \, ;
+\end{equation}
+<p>
+where ε is a Gaussian process and where \(f'\) and \(f''\) stand for the first and second time derivatives of \(f\). Therefore, if we can get estimates of \(f'\) and \(f''\) we should be able to estimate δ by linear regression (if we neglect the \(δ^2\) term as well as the potentially non null correlation in ε) or by non linear regression (if we keep the latter). We start by getting the derivatives estimates:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock17">dataD = apply(lambda x: fftconvolve(x,np.array([1,0,-1])/2.,'same'),
+              1, data)
+evtsED = swp.mk_events(sp0E,dataD,14,30)
+dataDD = apply(lambda x: fftconvolve(x,np.array([1,0,-1])/2.,'same'),
+               1, dataD)
+evtsEDD = swp.mk_events(sp0E,dataDD,14,30)
+c1D_median = apply(np.median,0,
+                   evtsED[goodEvts,:][np.array(c10b)==1,:])
+c1DD_median = apply(np.median,0,
+                    evtsEDD[goodEvts,:][np.array(c10b)==1,:])
+</pre>
+</div>
+<p>
+We then get something like Fig. \ref{fig:JitterIllustrationCluster1Event50b}:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python">plt.plot(evtsE[goodEvts,:][np.array(c10b)==1,:][50,:]-\
+         c1_median,color='red',lw=2)
+plt.plot(1.5*c1D_median,color='blue',lw=2)
+plt.plot(1.5*c1D_median+1.5**2/2*c1DD_median,color='black',lw=2)
+</pre>
+</div>
+
+
+<div id="orgparagraph2" class="figure">
+<p><img src="img/locust-sorting-python/JitterIllustrationCluster1Event50b.png" alt="JitterIllustrationCluster1Event50b.png" />
+</p>
+<p><span class="figure-number">Figure 2:</span> The median event of cluster 1 subtracted from event 50 of the same cluster (red); 1.5 times the first derivative of the median event (blue)—corresponding to δ=1.5—; 1.5 times the first derivative + 1.5^2/2 times the second (black)—corresponding again to δ=1.5—.</p>
+</div>
+
+<p>
+If we neglect the \(δ^2\) term we quickly arrive at:
+</p>
+\begin{equation}
+\hat{δ} = \frac{\mathbf{f'} \cdot (\mathbf{g} -\mathbf{f})}{\| \mathbf{f'} \|^2} \, ;
+\end{equation} 
+<p>
+where the 'vectorial' notation like \(\mathbf{a} \cdot \mathbf{b}\) stands here for: 
+\[
+\sum_{i=0}^{179} a_i b_i \, .
+\]
+</p>
+
+<p>
+For the 50th event of the cluster we get:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock18">delta_hat = np.dot(c1D_median,
+                   evtsE[goodEvts,:][np.array(c10b)==1,:][50,:]-\
+                   c1_median)/np.dot(c1D_median,c1D_median)
+delta_hat
+</pre>
+</div>
+
+<pre class="example">
+'org_babel_python_eoe'
+</pre>
+
+<p>
+We can use this estimated value of <code>delta_hat</code> as an initial guess for a procedure refining the estimate using also the \(δ^2\) term. The obvious quantity we should try to minimize is the residual sum of square, <code>RSS</code> defined by:
+\[
+\mathrm{RSS}(δ) = \| \mathbf{g} - \mathbf{f} - δ \, \mathbf{f'} - δ^2/2 \, \mathbf{f''} \|^2 \; .
+\]
+We can define a function returning the <code>RSS</code> for a given value of δ as well as an event <code>evt</code> a cluster center (median event of the cluster) <code>center</code> and its first two derivatives, <code>centerD</code> and <code>centerDD</code>:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock19">def rss_fct(delta,evt,center,centerD,centerDD):
+    return np.sum((evt - center - delta*centerD - delta**2/2*centerDD)**2)
+</pre>
+</div>
+<p>
+To create quickly a graph of the <code>RSS</code> as a function of δ for the specific case we are dealing with now (51st element of cluster 1) we create a vectorized or <i>universal</i> function version of the <code>rss_for_alignment</code> we just defined:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock20">urss_fct = np.frompyfunc(lambda x:
+                         rss_fct(x,
+                                 evtsE[goodEvts,:]\
+                                 [np.array(c10b)==1,:][50,:],
+                                 c1_median,c1D_median,c1DD_median),1,1)
+</pre>
+</div>
+<p>
+We then get the Fig. \ref{fig:JitterIllustrationCluster1Event50c} with:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python">plt.subplot(1,2,1)
+dd = np.arange(-5,5,0.05)
+plt.plot(dd,urss_fct(dd),color='black',lw=2)
+plt.subplot(1,2,2)
+dd_fine = np.linspace(delta_hat-0.5,delta_hat+0.5,501)
+plt.plot(dd_fine,urss_fct(dd_fine),color='black',lw=2)
+plt.axvline(x=delta_hat,color='red')
+</pre>
+</div>
+
+
+<div id="orgparagraph3" class="figure">
+<p><img src="img/locust-sorting-python/JitterIllustrationCluster1Event50c.png" alt="JitterIllustrationCluster1Event50c.png" />
+</p>
+<p><span class="figure-number">Figure 3:</span> The <code>RSS</code> as a function of δ for event 50 of cluster 1. Left, \(δ \in [-5,5]\); right, \(δ \in [\hat{δ}-0.5,\hat{δ}+0.5]\) and the red vertical line shows \(\hat{δ}\).</p>
+</div>
+
+<p>
+The left panel of the above figure shows that our initial guess for \(\hat{δ}\) is not bad but still approximately 0.2 units away from the actual minimum. The classical way to refine our δ estimate—in 'nice situations' where the function we are trying to minimize is locally convex—is to use the <a href="http://en.wikipedia.org/wiki/Newton's_method">Newton-Raphson algorithm</a> which consists in approximating locally the 'target function' (here our <code>RSS</code> function) by a parabola having locally the same first and second derivatives, before jumping to the minimum of this approximating parabola. If we develop our previous expression of \(\mathrm{RSS}(δ)\) we get:
+\[
+\mathrm{RSS}(δ) = \| \mathbf{h} \|^2 - 2\, δ \, \mathbf{h} \cdot \mathbf{f'} + δ^2 \, \left( \|\mathbf{f'}\|^2 -  \mathbf{h} \cdot \mathbf{f''}\right) + δ^3 \, \mathbf{f'} \cdot \mathbf{f''} + \frac{δ^4}{4} \|\mathbf{f''}\|^2 \, ;
+\]
+where \(\mathbf{h}\) stands for \(\mathbf{g} - \mathbf{f}\). By differentiation with respect to δ we get:
+\[
+\mathrm{RSS}'(δ) = - 2\, \mathbf{h} \cdot \mathbf{f'} + 2 \, δ \, \left( \|\mathbf{f'}\|^2 -  \mathbf{h} \cdot \mathbf{f''}\right) + 3 \, δ^2 \, \mathbf{f'} \cdot \mathbf{f''} + δ^3 \|\mathbf{f''}\|^2 \, .
+\]
+And a second differentiation leads to:
+\[
+\mathrm{RSS}''(δ) = 2 \, \left( \|\mathbf{f'}\|^2 -  \mathbf{h} \cdot \mathbf{f''}\right) + 6 \, δ \, \mathbf{f'} \cdot \mathbf{f''} + 3 \, δ^2 \|\mathbf{f''}\|^2 \, .
+\]
+The equation of the approximating parabola at \(δ^{(k)}\) is then:
+\[
+\mathrm{RSS}(δ^{(k)} + η) \approx \mathrm{RSS}(δ^{(k)}) + η \, \mathrm{RSS}'(δ^{(k)}) + \frac{η^2}{2} \, \mathrm{RSS}''(δ^{(k)})\; ,
+\]
+and its minimum—if \(\mathrm{RSS}''(δ)\) &gt; 0—is located at:
+\[
+δ^{(k+1)} = δ^{(k)} - \frac{\mathrm{RSS}'(δ^{(k)})}{\mathrm{RSS}''(δ^{(k)})} \; .
+\]
+Defining functions returning the required derivatives:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock21">def rssD_fct(delta,evt,center,centerD,centerDD):
+    h = evt - center
+    return -2*np.dot(h,centerD) + \
+      2*delta*(np.dot(centerD,centerD) - np.dot(h,centerDD)) + \
+      3*delta**2*np.dot(centerD,centerDD) + \
+      delta**3*np.dot(centerDD,centerDD)
+
+def rssDD_fct(delta,evt,center,centerD,centerDD):
+    h = evt - center
+    return 2*(np.dot(centerD,centerD) - np.dot(h,centerDD)) + \
+      6*delta*np.dot(centerD,centerDD) + \
+      3*delta**2*np.dot(centerDD,centerDD)
+</pre>
+</div>
+<p>
+we can get a graphical representation (Fig. \ref{fig:JitterIllustrationCluster1Event50d}) of a single step of the Newton-Raphson algorithm:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock22">rss_at_delta0 = rss_fct(delta_hat,
+                        evtsE[goodEvts,:][np.array(c10b)==1,:][50,:],
+                        c1_median,c1D_median,c1DD_median)
+rssD_at_delta0 = rssD_fct(delta_hat,
+                          evtsE[goodEvts,:][np.array(c10b)==1,:][50,:],
+                          c1_median,c1D_median,c1DD_median)
+rssDD_at_delta0 = rssDD_fct(delta_hat,
+                            evtsE[goodEvts,:][np.array(c10b)==1,:]\
+                            [50,:],c1_median,c1D_median,c1DD_median)
+delta_1 = delta_hat - rssD_at_delta0/rssDD_at_delta0
+</pre>
+</div>
+
+<div class="org-src-container">
+
+<pre class="src src-python">plt.plot(dd_fine,urss_fct(dd_fine),color='black',lw=2)
+plt.axvline(x=delta_hat,color='red')
+plt.plot(dd_fine,
+         rss_at_delta0 + (dd_fine-delta_hat)*rssD_at_delta0 + \
+         (dd_fine-delta_hat)**2/2*rssDD_at_delta0,color='blue',lw=2)
+plt.axvline(x=delta_1,color='grey')
+</pre>
+</div>
+
+<div id="orgparagraph4" class="figure">
+<p><img src="img/locust-sorting-python/JitterIllustrationCluster1Event50d.png" alt="JitterIllustrationCluster1Event50d.png" />
+</p>
+<p><span class="figure-number">Figure 4:</span> The <code>RSS</code> as a function of δ for event 50 of cluster 1  (black), the red vertical line shows \(\hat{δ}\). In blue, the approximating parabola at \(\hat{δ}\). The grey vertical line shows the minimum of the approximating parabola.</p>
+</div>
+
+<p>
+Subtracting the second order in δ approximation of f(t+δ) from the observed 50th event of cluster 1 we get Fig. \ref{fig:JitterIllustrationCluster1Event50e}:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python">plt.plot(evtsE[goodEvts,:][np.array(c10b)==1,:][50,:]-\
+         c1_median-delta_1*c1D_median-delta_1**2/2*c1DD_median,
+         color='red',lw=2)
+plt.plot(evtsE[goodEvts,:][np.array(c10b)==1,:][50,:],
+         color='black',lw=2)
+plt.plot(c1_median+delta_1*c1D_median+delta_1**2/2*c1DD_median,
+         color='blue',lw=1)
+</pre>
+</div>
+
+<div id="orgparagraph5" class="figure">
+<p><img src="img/locust-sorting-python/JitterIllustrationCluster1Event50e.png" alt="JitterIllustrationCluster1Event50e.png" />
+</p>
+<p><span class="figure-number">Figure 5:</span> Event 50 of cluster 1 (black), second order approximation of f(t+δ) (blue) and residual (red) for δ—obtained by a succession of a linear regression (order 1) and a single Newton-Raphson step—equal to: ='org_babel_python_eoe'= <code>1.3748048144324905</code>.</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgheadline10" class="outline-4">
+<h4 id="orgheadline10"><span class="section-number-4">1.9.2</span> Function definition</h4>
+<div class="outline-text-4" id="text-1-9-2">
+<p>
+We start with the chunk importing the required functions from the different modules (<code>&lt;&lt;mk_aligned_events-import-functions&gt;&gt;</code>):
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock23">from scipy.signal import fftconvolve
+from numpy import apply_along_axis as apply
+from scipy.spatial.distance import squareform
+</pre>
+</div>
+<p>
+We then get the first and second derivatives of the data:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock24">dataD = apply(lambda x: fftconvolve(x,np.array([1,0,-1])/2., 'same'),
+              1, data)
+dataDD = apply(lambda x: fftconvolve(x,np.array([1,0,-1])/2.,'same'),
+               1, dataD)
+</pre>
+</div>
+<p>
+Events are cut from the different data 'versions', derivatives of order 0, 1 and 2 (<code>&lt;&lt;mk_aligned_events-get-events&gt;&gt;</code>):
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock25">evts = mk_events(positions, data, before, after)
+evtsD = mk_events(positions, dataD, before, after)
+evtsDD = mk_events(positions, dataDD, before, after)
+</pre>
+</div>
+<p>
+A center or template is obtained by taking the pointwise median of the events we just got on the three versions of the data (<code>&lt;&lt;mk_aligned_events-get-centers&gt;&gt;</code>):
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock26">center = apply(np.median,0,evts)
+centerD = apply(np.median,0,evtsD)
+centerD_norm2 = np.dot(centerD,centerD)
+centerDD = apply(np.median,0,evtsDD)
+centerDD_norm2 = np.dot(centerDD,centerDD)
+centerD_dot_centerDD = np.dot(centerD,centerDD)
+</pre>
+</div>
+<p>
+Given an event, make a first order jitter estimation and compute the norm of the initial residual, <code>h_order0_norm2</code>, and of its first order jitter corrected version, <code>h_order1_norm2</code> (<code>&lt;&lt;mk_aligned_events-do-job-on-single-event-order1&gt;&gt;</code>):
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock27">h = evt - center
+h_order0_norm2 = sum(h**2)
+h_dot_centerD = np.dot(h,centerD)
+jitter0 = h_dot_centerD/centerD_norm2
+h_order1_norm2 = sum((h-jitter0*centerD)**2)
+</pre>
+</div>
+<p>
+If the residual's norm decrease upon first order jitter correction, try a second order one. At the end compare the norm of the second order jitter corrected residual (<code>h_order2_norm2</code>) with the one of the first order (<code>h_order1_norm2</code>). If the former is larger or equal than the latter, set the estimated jitter to its first order value (<code>&lt;&lt;mk_aligned_events-do-job-on-single-event-order2&gt;&gt;</code>): 
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock28">h_dot_centerDD = np.dot(h,centerDD)
+first = -2*h_dot_centerD + \
+  2*jitter0*(centerD_norm2 - h_dot_centerDD) + \
+  3*jitter0**2*centerD_dot_centerDD + \
+  jitter0**3*centerDD_norm2
+second = 2*(centerD_norm2 - h_dot_centerDD) + \
+  6*jitter0*centerD_dot_centerDD + \
+  3*jitter0**2*centerDD_norm2
+jitter1 = jitter0 - first/second
+h_order2_norm2 = sum((h-jitter1*centerD- \
+                      jitter1**2/2*centerDD)**2)
+if h_order1_norm2 &lt;= h_order2_norm2:
+    jitter1 = jitter0
+</pre>
+</div>
+<p>
+And now the function's <code>docstring</code> (<code>&lt;&lt;mk_aligned_events-docstring&gt;&gt;</code>):
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock29">"""Align events on the central event using first or second order
+Taylor expansion.
+
+Parameters
+----------
+positions: a vector of indices with the positions of the
+           detected events. 
+data: a matrix whose rows contains the recording channels.
+before: an integer, how many points should be within the cut
+        before the reference index / time given by positions.
+after: an integer, how many points should be within the cut
+       after the reference index / time given by positions.
+   
+Returns
+-------
+A tuple whose elements are:
+  A matrix with as many rows as events and whose rows are the
+  cuts on the different recording sites glued one after the
+  other. These events have been jitter corrected using the
+  second order Taylor expansion.
+  A vector of events positions where "actual" positions have
+  been rounded to the nearest index.
+  A vector of jitter values.
+  
+Details
+------- 
+(1) The data first and second derivatives are estimated first.
+(2) Events are cut next on each of the three versions of the data.
+(3) The global median event for each of the three versions are
+obtained.
+(4) Each event is then aligned on the median using a first order
+Taylor expansion.
+(5) If this alignment decreases the squared norm of the event
+(6) an improvement is looked for using a second order expansion.
+If this second order expansion still decreases the squared norm
+and if the estimated jitter is larger than 1, the whole procedure
+is repeated after cutting a new the event based on a better peak
+position (7). 
+"""
+</pre>
+</div>
+<p>
+To end up with the function itself:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock30">def mk_aligned_events(positions, data, before=14, after=30):
+    &lt;&lt;mk_aligned_events-docstring&gt;&gt;
+    &lt;&lt;mk_aligned_events-import-functions&gt;&gt;
+    n_evts = len(positions)
+    new_positions = positions.copy()
+    jitters = np.zeros(n_evts)
+    # Details (1)
+    &lt;&lt;mk_aligned_events-dataD-and-dataDD&gt;&gt;
+    # Details (2)
+    &lt;&lt;mk_aligned_events-get-events&gt;&gt;
+    # Details (3)
+    &lt;&lt;mk_aligned_events-get-centers&gt;&gt;
+    # Details (4)
+    for evt_idx in range(n_evts):
+        # Details (5)
+        evt = evts[evt_idx,:]
+        evt_pos = positions[evt_idx]
+        &lt;&lt;mk_aligned_events-do-job-on-single-event-order1&gt;&gt;
+        if h_order0_norm2 &gt; h_order1_norm2:
+            # Details (6)
+            &lt;&lt;mk_aligned_events-do-job-on-single-event-order2&gt;&gt;
+        else:
+            jitter1 = 0
+        if abs(round(jitter1)) &gt; 0:
+            # Details (7)
+            evt_pos -= int(round(jitter1))
+            evt = cut_sgl_evt(evt_pos,data=data,
+                              before=before, after=after)
+            &lt;&lt;mk_aligned_events-do-job-on-single-event-order1&gt;&gt;		      
+            if h_order0_norm2 &gt; h_order1_norm2:
+                &lt;&lt;mk_aligned_events-do-job-on-single-event-order2&gt;&gt;
+            else:
+                jitter1 = 0
+        if sum(evt**2) &gt; sum((h-jitter1*centerD-
+                              jitter1**2/2*centerDD)**2):
+            evts[evt_idx,:] = evt-jitter1*centerD- \
+                jitter1**2/2*centerDD
+        new_positions[evt_idx] = evt_pos 
+        jitters[evt_idx] = jitter1
+    return (evts, new_positions,jitters)
+</pre>
+</div>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-orgheadline12" class="outline-3">
+<h3 id="orgheadline12"><span class="section-number-3">1.10</span> <code>mk_center_dictionary</code></h3>
+<div class="outline-text-3" id="text-1-10">
+<p>
+We define function <code>mk_center_dictionary</code> starting with its <code>docstring</code>:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock31">""" Computes clusters 'centers' or templates and associated data.
+
+Clusters' centers should be built such that they can be used for 
+subtraction, this implies that we should make them long enough, on
+both side of the peak, to see them go back to baseline. Formal
+parameters before and after bellow should therefore be set to
+larger values than the ones used for clustering. 
+
+Parameters
+----------
+positions : a vector of spike times, that should all come from the
+            same cluster and correspond to reasonably 'clean'
+            events.
+data : a data matrix.
+before : the number of sampling point to keep before the peak.
+after : the number of sampling point to keep after the peak.
+
+Returns
+-------
+A dictionary with the following components:
+  center: the estimate of the center (obtained from the median).
+  centerD: the estimate of the center's derivative (obtained from
+           the median of events cut on the derivative of data).
+  centerDD: the estimate of the center's second derivative
+            (obtained from the median of events cut on the second
+            derivative of data).
+  centerD_norm2: the squared norm of the center's derivative.
+  centerDD_norm2: the squared norm of the center's second
+                  derivative.
+  centerD_dot_centerDD: the scalar product of the center's first
+                        and second derivatives.
+  center_idx: an array of indices generated by
+              np.arange(-before,after+1).
+ """
+</pre>
+</div>
+<p>
+The function starts by evaluating the first two derivatives of the data (<code>&lt;&lt;get-derivatives&gt;&gt;</code>):
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock32">from scipy.signal import fftconvolve
+from numpy import apply_along_axis as apply
+dataD = apply(lambda x:
+              fftconvolve(x,np.array([1,0,-1])/2.,'same'),
+              1, data)
+dataDD = apply(lambda x:
+               fftconvolve(x,np.array([1,0,-1])/2.,'same'),
+               1, dataD)
+</pre>
+</div>
+<p>
+The function is defined next:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock33">def mk_center_dictionary(positions, data, before=49, after=80):
+    &lt;&lt;mk_center_dictionary-docstring&gt;&gt;
+    &lt;&lt;mk_center_dictionary-get-derivatives&gt;&gt;
+    evts = mk_events(positions, data, before, after)
+    evtsD = mk_events(positions, dataD, before, after)
+    evtsDD = mk_events(positions, dataDD, before, after)
+    evts_median = apply(np.median,0,evts)
+    evtsD_median = apply(np.median,0,evtsD)
+    evtsDD_median = apply(np.median,0,evtsDD)
+    return {"center" : evts_median, 
+            "centerD" : evtsD_median, 
+            "centerDD" : evtsDD_median, 
+            "centerD_norm2" : np.dot(evtsD_median,evtsD_median),
+            "centerDD_norm2" : np.dot(evtsDD_median,evtsDD_median),
+            "centerD_dot_centerDD" : np.dot(evtsD_median,
+                                            evtsDD_median), 
+            "center_idx" : np.arange(-before,after+1)}
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgheadline13" class="outline-3">
+<h3 id="orgheadline13"><span class="section-number-3">1.11</span> <code>classify_and_align_evt</code></h3>
+<div class="outline-text-3" id="text-1-11">
+<p>
+We now define with the following <code>docstring</code> (<code>&lt;&lt;classify_and_align_evt-docstring&gt;&gt;</code>):
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock34">"""Compares a single event to a dictionary of centers and returns
+the name of the closest center if it is close enough or '?', the
+corrected peak position and the remaining jitter.
+
+Parameters
+----------
+evt_pos : a sampling point at which an event was detected.
+data : a data matrix.
+centers : a centers' dictionary returned by mk_center_dictionary.
+before : the number of sampling point to consider before the peak.
+after : the number of sampling point to consider after the peak.
+
+Returns
+-------
+A list with the following components:
+  The name of the closest center if it was close enough or '?'.
+  The nearest sampling point to the events peak.
+  The jitter: difference between the estimated actual peak
+  position and the nearest sampling point.
+"""
+</pre>
+</div>
+<p>
+The first chunk of the function takes a dictionary of centers, <code>centers</code>, generated by <code>mk_center_dictionary</code>, defines two variables, <code>cluster_names</code> and <code>n_sites</code>, and builds a matrix of centers, <code>centersM</code>:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock35">cluster_names = np.sort(list(centers))
+n_sites = data.shape[0]
+centersM = np.array([centers[c_name]["center"]\
+                     [np.tile((-before &lt;= centers[c_name]\
+                               ["center_idx"]).\
+                               __and__(centers[c_name]["center_idx"] \
+                                       &lt;= after), n_sites)]
+                                       for c_name in cluster_names])
+</pre>
+</div>
+<p>
+Extract the event, <code>evt</code>, to classify and subtract each center from it, <code>delta</code>, to find the closest one, <code>cluster_idx</code>, using the Euclidean squared norm (<code>&lt;&lt;cluster_idx&gt;&gt;</code>):
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock36">evt = cut_sgl_evt(evt_pos,data=data,before=before, after=after)
+delta = -(centersM - evt)
+cluster_idx = np.argmin(np.sum(delta**2,axis=1))
+</pre>
+</div>
+<p>
+Get the name of the selected cluster, <code>good_cluster_name</code>, and its 'time indices', <code>good_cluster_idx</code>. Then, extract the first two derivatives of the center, <code>centerD</code> and <code>centerDD</code>, their squared norms, <code>centerD_norm2</code> and <code>centerDD_norm2</code>, and their dot product, <code>centerD_dot_centerDD</code> (<code>&lt;&lt;get-centers&gt;&gt;</code>):
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock37">good_cluster_name = cluster_names[cluster_idx]
+good_cluster_idx = np.tile((-before &lt;= centers[good_cluster_name]\
+                            ["center_idx"]).\
+                            __and__(centers[good_cluster_name]\
+                                    ["center_idx"] &lt;= after),
+                                    n_sites)
+centerD = centers[good_cluster_name]["centerD"][good_cluster_idx]
+centerD_norm2 = np.dot(centerD,centerD)
+centerDD = centers[good_cluster_name]["centerDD"][good_cluster_idx]
+centerDD_norm2 = np.dot(centerDD,centerDD)
+centerD_dot_centerDD = np.dot(centerD,centerDD)
+</pre>
+</div>
+<p>
+Do a first order jitter correction where <code>h</code> contains the difference between the event and the center. Obtain the estimated jitter, <code>jitter0</code> and the squared norm of the first order corrected residual, <code>h_order1_norm2</code> (<code>&lt;&lt;jitter-order-1&gt;&gt;</code>): 
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock38">h_order0_norm2 = sum(h**2)
+h_dot_centerD = np.dot(h,centerD)
+jitter0 = h_dot_centerD/centerD_norm2
+h_order1_norm2 = sum((h-jitter0*centerD)**2)
+</pre>
+</div>
+<p>
+Do a second order jitter correction. Obtain the estimated jitter, <code>jitter1</code> and the squared norm of the second order corrected residual, <code>h_order2_norm2</code> (<code>&lt;&lt;jitter-order-2&gt;&gt;</code>):  
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock39">h_dot_centerDD = np.dot(h,centerDD)
+first = -2*h_dot_centerD + \
+  2*jitter0*(centerD_norm2 - h_dot_centerDD) + \
+  3*jitter0**2*centerD_dot_centerDD + \
+  jitter0**3*centerDD_norm2
+second = 2*(centerD_norm2 - h_dot_centerDD) + \
+  6*jitter0*centerD_dot_centerDD + \
+  3*jitter0**2*centerDD_norm2
+jitter1 = jitter0 - first/second
+h_order2_norm2 = sum((h-jitter1*centerD-jitter1**2/2*centerDD)**2)
+</pre>
+</div>
+<p>
+Now define the function:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock40">def classify_and_align_evt(evt_pos, data, centers,
+                           before=14, after=30):
+    &lt;&lt;classify_and_align_evt-docstring&gt;&gt;
+    &lt;&lt;classify_and_align_evt-centersM&gt;&gt;
+    &lt;&lt;classify_and_align_evt-cluster_idx&gt;&gt;
+    &lt;&lt;classify_and_align_evt-get-centers&gt;&gt;
+    h = delta[cluster_idx,:]
+    &lt;&lt;classify_and_align_evt-jitter-order-1&gt;&gt;
+    if h_order0_norm2 &gt; h_order1_norm2:
+        &lt;&lt;classify_and_align_evt-jitter-order-2&gt;&gt;
+        if h_order1_norm2 &lt;= h_order2_norm2:
+            jitter1 = jitter0
+    else:
+        jitter1 = 0
+    if abs(round(jitter1)) &gt; 0:
+        evt_pos -= int(round(jitter1))
+        evt = cut_sgl_evt(evt_pos,data=data,
+                          before=before, after=after)
+        h = evt - centers[good_cluster_name]["center"]\
+          [good_cluster_idx]
+        &lt;&lt;classify_and_align_evt-jitter-order-1&gt;&gt;  
+        if h_order0_norm2 &gt; h_order1_norm2:
+            &lt;&lt;classify_and_align_evt-jitter-order-2&gt;&gt;
+            if h_order1_norm2 &lt;= h_order2_norm2:
+                jitter1 = jitter0
+        else:
+            jitter1 = 0
+    if sum(evt**2) &gt; sum((h-jitter1*centerD-jitter1**2/2*centerDD)**2):
+        return [cluster_names[cluster_idx], evt_pos, jitter1]
+    else:
+        return ['?',evt_pos, jitter1]
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgheadline14" class="outline-3">
+<h3 id="orgheadline14"><span class="section-number-3">1.12</span> <code>predict_data</code></h3>
+<div class="outline-text-3" id="text-1-12">
+<p>
+We define function <code>predict_data</code> that creates an ideal data trace given events' positions, events' origins and a clusters' catalog. We start with the <code>docstring</code>:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock41">"""Predicts ideal data given a list of centers' names, positions,
+jitters and a dictionary of centers.
+
+Parameters
+----------
+class_pos_jitter_list : a list of lists returned by
+                        classify_and_align_evt.
+centers_dictionary : a centers' dictionary returned by
+                     mk_center_dictionary.
+nb_channels : the number of recording channels.
+data_length : the number of sampling points.
+
+Returns
+-------
+A matrix of ideal (noise free) data with nb_channels rows and
+data_length columns.
+"""
+</pre>
+</div>
+<p>
+And the function:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock42">def predict_data(class_pos_jitter_list,
+                 centers_dictionary,
+                 nb_channels=4,
+                 data_length=300000):
+    &lt;&lt;predict_data-docstring&gt;&gt;
+    ## Create next a matrix that will contain the results
+    res = np.zeros((nb_channels,data_length))
+    ## Go through every list element
+    for class_pos_jitter in class_pos_jitter_list:
+        cluster_name = class_pos_jitter[0]
+        if cluster_name != '?':
+            center = centers_dictionary[cluster_name]["center"]
+            centerD = centers_dictionary[cluster_name]["centerD"]
+            centerDD = centers_dictionary[cluster_name]["centerDD"]
+            jitter = class_pos_jitter[2]
+            pred = center + jitter*centerD + jitter**2/2*centerDD
+            pred = pred.reshape((nb_channels,len(center)//nb_channels))
+            idx = centers_dictionary[cluster_name]["center_idx"] + \
+              class_pos_jitter[1]
+            ## Make sure that the event is not too close to the
+            ## boundaries
+            within = np.bitwise_and(0 &lt;= idx, idx &lt; data_length)
+            kw = idx[within]
+            res[:,kw] += pred[:,within]
+    return res
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="date">Date: <span class="timestamp-wrapper"><span class="timestamp">&lt;2016-01-18 lun.&gt;</span></span></p>
+<p class="author">Author: Christophe Pouzat</p>
+<p class="date">Created: 2016-01-18 lun. 20:26</p>
+<p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>
