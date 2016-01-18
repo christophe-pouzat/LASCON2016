@@ -43,8 +43,8 @@
 #+NAME: make-sure-dir-img/locust-sorting-python-is-here
 #+BEGIN_SRC python :results silent :exports none
 import os
-if not 'figsSorting' in os.listdir("."):
-    os.mkdir('figsSorting')
+if not 'figsL1' in os.listdir("."):
+    os.mkdir('figsL1')
 
 #+END_SRC
 
@@ -222,15 +222,15 @@ swp.plot_data_list(data,tt,0.1)
 The first channel is drawn as is, the second is offset downward by the sum of its maximal value and of the absolute value of the minimal value of the first, etc. We then get something like Fig. \ref{fig:WholeRawData}.
 
 #+BEGIN_SRC python :exports results :results file
-plt.savefig("figsSorting/locust-sorting-python/WholeRawData.png")
-"figsSorting/locust-sorting-python/WholeRawData.png"
+plt.savefig("figsL1/WholeRawData.png")
+"figsL1/WholeRawData.png"
 #+END_SRC
 
 #+CAPTION: The whole (20 s) Locust antennal lobe data set.
 #+ATTR_LATEX: :width 1.0\textwidth
 #+NAME: fig:WholeRawData
 #+RESULTS:
-[[file:figsSorting/locust-sorting-python/WholeRawData.png]]
+[[file:figsL1/WholeRawData.png]]
 
 It is also good to "zoom in" and look at the data with a finer time scale (Fig. \ref{fig:First200ms}) with:
 
@@ -239,16 +239,1024 @@ plt.xlim([0,0.2])
 #+END_SRC
 
 #+BEGIN_SRC python :exports results :results file
-plt.savefig("figsSorting/locust-sorting-python/First200ms.png")
+plt.savefig("figsL1/First200ms.png")
 plt.close()
-"figsSorting/locust-sorting-python/First200ms.png"
+"figsL1/First200ms.png"
 #+END_SRC
 
 #+CAPTION: First 200 ms of the Locust data set.
 #+NAME: fig:First200ms
 #+ATTR_LATEX: :width 1.0\textwidth
 #+RESULTS:
-[[file:figsSorting/locust-sorting-python/First200ms.png]]
+[[file:figsL1/First200ms.png]]
+
+* Data renormalization 						     :export:
+:PROPERTIES:
+:header-args:python: :session *Python*
+:END:
+
+We are going to use a [[http://en.wikipedia.org/wiki/Median_absolute_deviation][median absolute deviation]] (=MAD=) based renormalization. The goal of the procedure is to scale the raw data such that the /noise SD/ is approximately 1. Since it is not straightforward to obtain a noise SD on data where both signal (/i.e./, spikes) and noise are present, we use this [[http://en.wikipedia.org/wiki/Robust_statistics][robust]] type of statistic for the SD:
+
+#+NAME: raw-data-mad
+#+BEGIN_SRC python :exports both :results pp
+data_mad = list(map(swp.mad,data))
+data_mad
+#+END_SRC
+
+#+RESULTS: raw-data-mad
+: [0.51729684828925626,
+:  0.62706123501700972,
+:  0.74028320607479514,
+:  0.68418138527772443]
+
+
+And we normalize accordingly (we also subtract the =median= which is not exactly 0):
+
+#+NAME: normalize-data
+#+BEGIN_SRC python :results silent
+data = list(map(lambda x: (x-np.median(x))/swp.mad(x), data))
+#+END_SRC
+We can check on a plot (Fig. \ref{fig:site1-with-MAD-and-SD}) how =MAD= and =SD= compare:
+
+#+NAME: site1-with-MAD-and-SD
+#+BEGIN_SRC python :results silent
+plt.plot(tt,data[0],color="black")
+plt.xlim([0,0.2])
+plt.ylim([-17,13])
+plt.axhline(y=1,color="red")
+plt.axhline(y=-1,color="red")
+plt.axhline(y=np.std(data[0]),color="blue",linestyle="dashed")
+plt.axhline(y=-np.std(data[0]),color="blue",linestyle="dashed")
+plt.xlabel('Time (s)')
+plt.ylim([-5,10])
+#+END_SRC
+
+#+BEGIN_SRC python :exports results :results file
+plt.savefig("figsL1/site1-with-MAD-and-SD.png")
+plt.close()
+"figsL1/site1-with-MAD-and-SD.png"  
+#+END_SRC
+
+#+CAPTION: First 200 ms on site 1 of the Locust data set. In red: +/- the =MAD=; in dashed blue +/- the =SD=.
+#+NAME: fig:site1-with-MAD-and-SD
+#+ATTR_LaTeX: :width 0.8\textwidth
+#+RESULTS:
+[[file:figsL1/site1-with-MAD-and-SD.png]]
+
+** A quick check that the =MAD= "does its job"
+We can check that the =MAD= does its job as a robust estimate of the /noise/ standard deviation by looking at [[http://en.wikipedia.org/wiki/Q-Q_plot][Q-Q plots]] of the whole traces normalized with the =MAD= and normalized with the "classical" =SD= (Fig. \ref{fig:check-MAD}):
+
+#+BEGIN_SRC python :results silent
+dataQ = map(lambda x:
+            mquantiles(x, prob=np.arange(0.01,0.99,0.001)),data)
+dataQsd = map(lambda x:
+              mquantiles(x/np.std(x), prob=np.arange(0.01,0.99,0.001)),
+              data)
+from scipy.stats import norm
+qq = norm.ppf(np.arange(0.01,0.99,0.001))
+plt.plot(np.linspace(-3,3,num=100),np.linspace(-3,3,num=100),
+         color='grey')
+colors = ['black', 'orange', 'blue', 'red']
+for i,y in enumerate(dataQ):
+    plt.plt.plot(qq,y,color=colors[i])
+
+for i,y in enumerate(dataQsd):
+    plt.plot(qq,y,color=colors[i],linestyle="dashed")
+
+plt.xlabel('Normal quantiles')
+plt.ylabel('Empirical quantiles')
+#+END_SRC
+
+#+NAME: check-MAD
+#+BEGIN_SRC python :exports results :results file
+plt.savefig("figsL1/check-MAD.png")
+plt.close()
+"figsL1/check-MAD.png"  
+#+END_SRC
+
+#+CAPTION: Performances of =MAD= based vs =SD= based normalizations. After normalizing the data of each recording site by its =MAD= (plain colored curves) or its =SD= (dashed colored curves), Q-Q plot against a standard normal distribution were constructed. Colors: site 1, black; site 2, orange; site 3, blue; site 4, red. 
+#+NAME: fig:check-MAD
+#+ATTR_LaTeX: :width 0.8\textwidth
+#+RESULTS: check-MAD
+[[file:figsL1/check-MAD.png]]
+
+We see that the behavior of the "away from normal" fraction is much more homogeneous for small, as well as for large in fact, quantile values with the =MAD= normalized traces than with the =SD= normalized ones. If we consider automatic rules like the three sigmas we are going to reject fewer events (/i.e./, get fewer putative spikes) with the =SD= based normalization than with the =MAD= based one.   
+
+* Detect peaks 							     :export:
+:PROPERTIES:
+:header-args:python: :session *Python*
+:END:
+
+We are going to filter the data slightly using a "box" filter of length 3. That is, the data points of the original trace are going to be replaced by the average of themselves with their four nearest neighbors. We will then scale the filtered traces such that the =MAD= is one on each recording sites and keep only the parts of the signal which above 4:
+
+#+NAME: filter-data
+#+BEGIN_SRC python :results silent
+from scipy.signal import fftconvolve
+from numpy import apply_along_axis as apply 
+data_filtered = apply(lambda x:
+                      fftconvolve(x,np.array([1,1,1,1,1])/5.,'same'),
+                      1,np.array(data))
+data_filtered = (data_filtered.transpose() / \
+                 apply(swp.mad,1,data_filtered)).transpose()
+data_filtered[data_filtered < 4] = 0
+#+END_SRC
+We can see the difference between the /raw/ trace and the /filtered and rectified/ one (Fig. \ref{fig:compare-raw-and-filtered-data}) on which spikes are going to be detected with:
+
+#+BEGIN_SRC python :exports code :results silent
+plt.plot(tt, data[0],color='black')
+plt.axhline(y=4,color="blue",linestyle="dashed")
+plt.plot(tt, data_filtered[0,],color='red')
+plt.xlim([0,0.2])
+plt.ylim([-5,10])
+plt.xlabel('Time (s)')
+#+END_SRC
+
+#+NAME: compare-raw-and-filtered-data
+#+BEGIN_SRC python :exports results :results file
+plt.savefig("figsL1/compare-raw-and-filtered-data.png")
+plt.close()
+"figsL1/compare-raw-and-filtered-data.png"  
+#+END_SRC
+
+#+CAPTION: First 200 ms on site 1 of data set =data=. The raw data are shown in black, the detection threshold appears in dashed blue and the filtered and rectified trace on which spike detection is going to be preformed appears in red. 
+#+NAME: fig:compare-raw-and-filtered-data
+#+ATTR_LaTeX: :width 0.8\textwidth
+#+RESULTS: compare-raw-and-filtered-data
+[[file:figsL1/compare-raw-and-filtered-data.png]]
+
+We now use function =peak= on the sum of the rows of our filtered and rectified version of the data:
+
+#+NAME: sp0
+#+BEGIN_SRC python :results silent
+sp0 = swp.peak(data_filtered.sum(0))
+#+END_SRC
+
+Giving src_python[:results pp]{len(sp0)} =1795= spikes, a mean inter-event interval of src_python[:results pp]{round(np.mean(np.diff(sp0)))} =167.0= sampling points, a standard deviation of src_python[:results pp]{round(np.std(np.diff(sp0)))} =144.0= sampling points, a smallest inter-event interval of src_python[:results pp]{np.min(np.diff(sp0))} =16= sampling points and a largest of src_python[:results pp]{np.max(np.diff(sp0))} =1157= sampling points.
+
+** Interactive spike detection check
+We can then check the detection quality with:
+
+#+BEGIN_SRC python :results silent
+swp.plot_data_list_and_detection(data,tt,sp0)
+plt.xlim([0,0.2])
+#+END_SRC
+
+#+NAME: check-spike-detection
+#+BEGIN_SRC python :exports results :results file
+plt.savefig("figsL1/check-spike-detection.png")
+plt.close()
+"figsL1/check-spike-detection.png"  
+#+END_SRC
+
+#+CAPTION: First 200 ms of data set =data=. The raw data are shown in black, the detected events are signaled by red dots (a dot is put on each recording site at the amplitude on that site at that time). 
+#+NAME: fig:compare-raw-and-filtered-data
+#+ATTR_LaTeX: :width 0.8\textwidth
+#+RESULTS: check-spike-detection
+[[file:figsL1/check-spike-detection.png]]
+
+** Split the data set in two parts
+As explained in the text, we want to "emulate" a long data set analysis where the model is estimated on the early part before doing template matching on what follows. We therefore get an "early" and a "late" part by splitting the data set in two:
+ 
+#+NAME: split-data
+#+BEGIN_SRC python :results silent
+sp0E = sp0[sp0 <= data_len/2.]
+sp0L = sp0[sp0 > data_len/2.]
+#+END_SRC
+
+In =sp0E=, the number of detected events is: src_python[:results pp]{len(sp0E)} =908= ; the mean inter-event interval is: src_python[:results pp]{round(np.mean(np.diff(sp0E)))} =165.0=; the standard deviation of the inter-event intervals is: src_python[:results pp]{round(np.std(np.diff(sp0E)))} =139.0=; the smallest inter-event interval is: src_python[:results pp]{np.min(np.diff(sp0E))} =16= sampling points long; the largest inter-event interval is: src_python[:results pp]{np.max(np.diff(sp0E))} =931= sampling points long.
+
+In =sp0L=, the number of detected events is: src_python[:results pp]{len(sp0L)} =887=; the mean inter-event interval is: src_python[:results pp]{round(np.mean(np.diff(sp0L)))} =169.0=; the standard deviation of the inter-event intervals is: src_python[:results pp]{round(np.std(np.diff(sp0L)))} =149.0=; the smallest inter-event interval is: src_python[:results pp]{np.min(np.diff(sp0L))} =16= sampling points long; the largest inter-event interval is: src_python[:results pp]{np.max(np.diff(sp0L))} =1157= sampling points long.
+
+* Cuts 								     :export:
+:PROPERTIES:
+:header-args:python: :session *Python*
+:END:
+
+After detecting our spikes, we must make our cuts in order to create our events' sample. The obvious question we must first address is: How long should our cuts be? The pragmatic way to get an answer is:
++ Make cuts much longer than what we think is necessary, like 50 sampling points on both sides of the detected event's time.
++ Compute robust estimates of the "central" event (with the =median=) and of the dispersion of the sample around this central event (with the =MAD=).
++ Plot the two together and check when does the =MAD= trace reach the background noise level (at 1 since we have normalized the data).
++ Having the central event allows us to see if it outlasts significantly the region where the =MAD= is above the background noise level.
+
+Clearly cutting beyond the time at which the =MAD= hits back the noise level should not bring any useful information as far a classifying the spikes is concerned. So here we perform this task as follows:
+
+#+BEGIN_SRC python :results silent
+evtsE = swp.mk_events(sp0E,np.array(data),49,50)
+evtsE_median=apply(np.median,0,evtsE)
+evtsE_mad=apply(swp.mad,0,evtsE)
+#+END_SRC
+
+#+BEGIN_SRC python :results silent
+plt.plot(evtsE_median, color='red', lw=2)
+plt.axhline(y=0, color='black')
+for i in np.arange(0,400,100): 
+    plt.axvline(x=i, color='black', lw=2)
+
+for i in np.arange(0,400,10): 
+    plt.axvline(x=i, color='grey')
+
+plt.plot(evtsE_median, color='red', lw=2)
+plt.plot(evtsE_mad, color='blue', lw=2)
+#+END_SRC
+
+#+NAME: check-MAD-on-long-cuts
+#+BEGIN_SRC python :exports results :results file
+plt.savefig("figsL1/check-MAD-on-long-cuts.png")
+plt.close()
+'figsL1/check-MAD-on-long-cuts.png'  
+#+END_SRC
+
+#+CAPTION: Robust estimates of the central event (black) and of the sample's dispersion around the central event (red) obtained with "long" (100 sampling points) cuts. We see clearly that the dispersion is back to noise level 15 points before the peak and 30 points after the peak.
+#+NAME: fig:check-MAD-on-long-cuts
+#+ATTR_LaTeX: :width 0.8\textwidth
+#+RESULTS: check-MAD-on-long-cuts
+[[file:figsL1/check-MAD-on-long-cuts.png]]
+
+Fig. \ref{fig:check-MAD-on-long-cuts} clearly shows that starting the cuts 15 points before the peak and ending them 30 points after should fulfill our goals. We also see that the central event slightly outlasts the window where the =MAD= is larger than 1.
+
+** Events
+Once we are satisfied with our spike detection, at least in a provisory way, and that we have decided on the length of our cuts, we proceed by making =cuts= around the detected events. :
+
+#+NAME: evtsE
+#+BEGIN_SRC python :exports code :results silent
+evtsE = swp.mk_events(sp0E,np.array(data),14,30)
+#+END_SRC
+
+We can visualize the first 200 events with:
+
+#+BEGIN_SRC python :results silent
+swp.plot_events(evtsE,200)
+#+END_SRC
+
+#+name: first-200-of-evtsE
+#+BEGIN_SRC python :exports results :results file
+plt.savefig("figsL1/first-200-of-evtsE.png")
+plt.close()
+'figsL1/first-200-of-evtsE.png'  
+#+END_SRC
+
+#+CAPTION: First 200 events of =evtsE=. Cuts from the four recording sites appear one after the other. The background (white / grey) changes with the site. In red, /robust/ estimate of the "central" event obtained by computing the pointwise median. In blue, /robust/ estimate of the scale (SD) obtained by computing the pointwise =MAD=. 
+#+LABEL: fig:first-200-of-evtsE
+#+ATTR_LaTeX: :width 0.8\textwidth
+#+RESULTS: first-200-of-evtsE
+[[file:figsL1/first-200-of-evtsE.png]]
+
+** Noise
+Getting an estimate of the noise statistical properties is an essential ingredient to build respectable goodness of fit tests. In our approach "noise events" are essentially anything that is not an "event" is the sense of the previous section. I wrote essentially and not exactly since there is a little twist here which is the minimal distance we are willing to accept between the reference time of a noise event and the reference time of the last preceding and of the first following "event". We could think that keeping a cut length on each side would be enough. That would indeed be the case if /all/ events were starting from and returning to zero within a cut. But this is not the case with the cuts parameters we chose previously (that will become clear soon). You might wonder why we chose so short a cut length then. Simply to avoid having to deal with too many superposed events which are the really bothering events for anyone wanting to do proper sorting. 
+To obtain our noise events we are going to use function =mk_noise= which takes the /same/ arguments as function =mk_events= plus two numbers: 
++ =safety_factor= a number by which the cut length is multiplied and which sets the minimal distance between the reference times discussed in the previous paragraph.
++ =size= the maximal number of noise events one wants to cut (the actual number obtained might be smaller depending on the data length, the cut length, the safety factor and the number of events).
+
+We cut noise events with a rather large safety factor:
+
+#+NAME: noiseE
+#+BEGIN_SRC python :exports code :results silent
+noiseE = swp.mk_noise(sp0E,np.array(data),14,30,safety_factor=2.5,size=2000)
+#+END_SRC
+
+** Getting "clean" events
+Our spike sorting has two main stages, the first one consist in estimating a *model* and the second one consists in using this model to *classify* the data. Our *model* is going to be built out of reasonably "clean" events. Here by clean we mean events which are not due to a nearly simultaneous firing of two or more neurons; and simultaneity is defined on the time scale of one of our cuts. When the model will be subsequently used to classify data, events are going to decomposed into their (putative) constituent when they are not "clean", that is, *superposition are going to be looked and accounted for*. 
+
+In order to eliminate the most obvious superpositions we are going to use a rather brute force approach, looking at the sides of the central peak of our median event and checking if individual events are not too large there, that is do not exhibit extra peaks. We first define a function doing this job:
+
+#+NAME: good_evts_fct
+#+BEGIN_SRC python :exports code :results silent
+def good_evts_fct(samp, thr=3):
+    samp_med = apply(np.median,0,samp)
+    samp_mad = apply(swp.mad,0,samp)
+    above = samp_med > 0
+    samp_r = samp.copy()
+    for i in range(samp.shape[0]): samp_r[i,above] = 0
+    samp_med[above] = 0
+    res = apply(lambda x:
+                np.all(abs((x-samp_med)/samp_mad) < thr),
+                1,samp_r)
+    return res
+
+#+END_SRC
+
+We then apply our new function to our sample using a threshold of 8 (set by trial and error):
+
+#+NAME: goodEvts
+#+BEGIN_SRC python :exports code :results silent
+goodEvts = good_evts_fct(evtsE,8)
+#+END_SRC
+
+Out of src_python[:results pp]{len(goodEvts)} =898= events we get src_python[:results pp]{sum(goodEvts)} =843= "good" ones. As usual, the first 200 good ones can be visualized with:
+
+#+BEGIN_SRC python :results silent
+swp.plot_events(evtsE[goodEvts,:][:200,:])
+#+END_SRC 
+
+#+name: first-200-clean-of-evtsE
+#+BEGIN_SRC python :exports results :results file
+plt.savefig("figsL1/first-200-clean-of-evtsE.png")
+plt.close()
+'figsL1/first-200-clean-of-evtsE.png'  
+#+END_SRC
+
+#+CAPTION: First 200 "good" events of =evtsE=. Cuts from the four recording sites appear one after the other. The background (white / grey) changes with the site. In red, /robust/ estimate of the "central" event obtained by computing the pointwise median. In blue, /robust/ estimate of the scale (SD) obtained by computing the pointwise =MAD=. 
+#+LABEL: fig:first-200-clean-of-evtsE
+#+ATTR_LaTeX: :width 0.8\textwidth
+#+RESULTS: first-200-clean-of-evtsE
+[[file:figsL1/first-200-clean-of-evtsE.png]]
+
+The "bad" guys can be visualized with:
+
+#+BEGIN_SRC python :eval no-export :results silent
+swp.plot_events(evtsE[goodEvts.__neg__(),:],
+                show_median=False,
+                show_mad=False)
+#+END_SRC
+
+#+name: bad-of-evtsE
+#+BEGIN_SRC python :exports results :results file
+plt.savefig("figsL1/bad-of-evtsE.png")
+plt.close()
+'figsL1/bad-of-evtsE.png'  
+#+END_SRC
+
+#+CAPTION: The  src_python[:results pp]{len(goodEvts)-sum(goodEvts)} =50= "bad" events of =evtsE=. Cuts from the four recording sites appear one after the other. The background (white / grey) changes with the site.  
+#+LABEL: fig:bad-of-evtsE
+#+ATTR_LaTeX: :width 0.8\textwidth
+#+RESULTS: bad-of-evtsE
+[[file:figsL1/bad-of-evtsE.png]]
+
+* Dimension reduction 						     :export:
+:PROPERTIES:
+:header-args:python: :session *Python*
+:END:
+
+** Principal Component Analysis (PCA)
+Our events are living right now in an 180 dimensional space (our cuts are 45 sampling points long and we are working with 4 recording sites simultaneously). It turns out that it hard for most humans to perceive structures in such spaces. It also hard, not to say impossible with a realistic sample size, to estimate probability densities (which is what model based clustering algorithms are actually doing) in such spaces, unless one is ready to make strong assumptions about these densities. It is therefore usually a good practice to try to reduce the dimension of the [[http://en.wikipedia.org/wiki/Sample_space][sample space]] used to represent the data. We are going to that with [[http://en.wikipedia.org/wiki/Principal_component_analysis][principal component analysis]] (=PCA=), using it on our "good" events. 
+
+#+NAME: PCA
+#+BEGIN_SRC python :exports code :results silent
+from numpy.linalg import svd
+varcovmat = np.cov(evtsE[goodEvts,:].T)
+u, s, v = svd(varcovmat)
+#+END_SRC
+
+With this "back to the roots" approach, =u= should be an orthonormal matrix whose column are made of the =principal components= (and =v= should be the transpose of =u= since our matrix =varcovmat= is symmetric and real by construction). =s= is a vector containing the amount of sample variance explained by each principal component.
+
+** Exploring =PCA= results
+=PCA= is a rather abstract procedure to most of its users, at least when they start using it. But one way to grasp what it does is to plot the =mean event= plus or minus, say five times, each principal components like:
+
+#+BEGIN_SRC python :session *Python*  :exports code :results silent
+evt_idx = range(180)
+evtsE_good_mean = np.mean(evtsE[goodEvts,:],0)
+for i in range(4):
+    plt.subplot(2,2,i+1)
+    plt.plot(evt_idx,evtsE_good_mean, 'black',evt_idx,
+             evtsE_good_mean + 5 * u[:,i],
+             'red',evt_idx,evtsE_good_mean - 5 * u[:,i], 'blue')
+    plt.title('PC' + str(i) + ': ' + str(round(s[i]/sum(s)*100)) +'%')
+
+#+END_SRC
+
+#+BEGIN_SRC python :exports results :results file
+plt.savefig("figsL1/explore-evtsE-PC0to3.png")
+plt.close()
+"figsL1/explore-evtsE-PC0to3.png"  
+#+END_SRC
+
+#+CAPTION: PCA of =evtsE= (for "good" events) exploration (PC 1 to 4). Each of the 4 graphs shows the mean waveform (black), the mean waveform + 5 x PC (red), the mean - 5 x PC (blue) for each of the first 4 PCs. The fraction of the total variance "explained" by the component appears in the title of each graph.
+#+NAME: fig:explore-evtsE-PC0to3
+#+ATTR_LaTeX: :width 0.8\textwidth
+#+RESULTS:
+[[file:figsL1/explore-evtsE-PC0to3.png]]
+
+We can see on Fig. \ref{fig:explore-evtsE-PC0to3} that the first 3 PCs correspond to pure amplitude variations. An event with a large projection (=score=) on the first PC is smaller than the average event on recording sites 1, 2 and 3, but not on 4. An event with a large projection on PC 1 is larger than average on site 1, smaller than average on site 2 and 3 and identical to the average on site 4. An event with a large projection on PC 2 is larger than the average on site 4 only. PC 3 is the first principal component corresponding to a change in /shape/ as opposed to /amplitude/. A large projection on PC 3 means that the event as a shallower first valley and a deeper second valley than the average event on all recording sites.  
+
+We now look at the next 4 principal components:
+
+#+BEGIN_SRC python  :exports code :results silent
+for i in range(4,8):
+    plt.subplot(2,2,i-3)
+    plt.plot(evt_idx,evtsE_good_mean, 'black',
+             evt_idx,evtsE_good_mean + 5 * u[:,i], 'red',
+             evt_idx,evtsE_good_mean - 5 * u[:,i], 'blue')
+    plt.title('PC' + str(i) + ': ' + str(round(s[i]/sum(s)*100)) +'%')
+
+#+END_SRC
+
+#+BEGIN_SRC python  :exports results :results file
+plt.savefig("figsL1/explore-evtsE-PC4to7.png")
+plt.close()
+"figsL1/explore-evtsE-PC4to7.png"  
+#+END_SRC
+
+#+CAPTION: PCA of =evtsE= (for "good" events) exploration (PC 4 to 7). Each of the 4 graphs shows the mean waveform (black), the mean waveform + 5 x PC (red), the mean - 5 x PC (blue). The fraction of the total variance "explained" by the component appears in between parenthesis in the title of each graph. 
+#+NAME: fig:explore-evtsE-PC4to7
+#+ATTR_LaTeX: :width 0.8\textwidth
+#+RESULTS:
+[[file:figsL1/explore-evtsE-PC4to7.png]]
+
+An event with a large projection on PC 4 (Fig. \ref{fig:explore-evtsE-PC4to7}) tends to be "slower" than the average event. An event with a large projection on PC 5 exhibits a slower kinetics of its second valley than the average event. PC 4 and 5 correspond to effects shared among recording sites. PC 6 correspond also to a "change of shape" effect on all sites except the first. Events with a large projection on PC 7 rise slightly faster and decay slightly slower than the average event on all recording site. Notice also that PC 7 has a "noisier" aspect than the other suggesting that we are reaching the limit of the "events extra variability" compared to the variability present in the background noise.
+
+This guess can be confirmed by comparing the variance of the "good" events sample with the one of the noise sample to which the variance contributed by the first K PCs is added:
+
+#+BEGIN_SRC python  :exports both :results pp
+noiseVar = sum(np.diag(np.cov(noiseE.T)))
+evtsVar = sum(s)
+[(i,sum(s[:i])+noiseVar-evtsVar) for i in range(15)]
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+[(0, -577.55150481947305),
+ (1, -277.46515432919722),
+ (2, -187.56341162342278),
+ (3, -128.03907765900999),
+ (4, -91.318669099617864),
+ (5, -58.839887602314093),
+ (6, -36.36306744692456),
+ (7, -21.543722414005629),
+ (8, -8.2644951775207574),
+ (9, 0.28488929424531761),
+ (10, 6.9067335500932359),
+ (11, 13.341548838374251),
+ (12, 19.472089099226878),
+ (13, 25.255335647533229),
+ (14, 29.102104713041399)]
+#+end_example
+
+This suggests that keeping the first 10 PCs should be more than enough.
+
+** Static representation of the projected data
+We can build a =scatter plot matrix= showing the projections of our "good" events sample onto the plane defined by pairs of the few first PCs:
+
+#+NAME: FIG4a
+#+BEGIN_SRC python  :exports code :results silent
+evtsE_good_P0_to_P3 = np.dot(evtsE[goodEvts,:],u[:,0:4])
+from pandas.tools.plotting import scatter_matrix
+import pandas as pd
+df = pd.DataFrame(evtsE_good_P0_to_P3)
+scatter_matrix(df,alpha=0.2,s=4,c='k',figsize=(6,6),
+               diagonal='kde',marker=".")
+ 
+#+END_SRC
+
+#+NAME: FIG4b
+#+BEGIN_SRC python :results file :exports results
+plt.savefig('figsL1/Fig4.png')
+plt.close()
+'figsL1/Fig4.png'
+#+END_SRC
+
+
+#+CAPTION: Scatter plot matrix of the projections of the good events in =evtsE= onto the planes defined by the first 4 PCs. The diagonal shows a smooth (Gaussian kernel based) density estimate of the projection of the sample on the corresponding PC. Using the first 8 PCs does not make finner structure visible. 
+#+NAME: fig:Fig4
+#+ATTR_LaTeX: :width 0.8\textwidth
+#+RESULTS: FIG4b
+[[file:figsL1/Fig4.png]]
+
+** Dynamic visualization of the data with =GGobi=
+The best way to discern structures in "high dimensional" data is to dynamically visualize them. To this end, the tool of choice is [[http://www.ggobi.org/][GGobi]], an open source software available on =Linux=, =Windows= and =MacOS=. We start by exporting our data in =csv= format to our disk:
+
+#+NAME: ToGGobi1
+#+BEGIN_SRC python :results silent
+import csv
+f = open('evtsE.csv','w')
+w = csv.writer(f)
+w.writerows(np.dot(evtsE[goodEvts,:],u[:,:8]))
+f.close()
+#+END_SRC
+
+The following terse procedure should allow the reader to get going with =GGobi=:
++ Launch =GGobi=
++ In menu: =File= -> =Open=, select =evtsE.csv=.
++ Since the glyphs are rather large, start by changing them for smaller ones:
+ - Go to menu: =Interaction= -> =Brush=.
+ - On the Brush panel which appeared check the =Persistent= box.
+ - Click on =Choose color & glyph...=.
+ - On the chooser which pops out, click on the small dot on the upper left of the left panel.
+ - Go back to the window with the data points.
+ - Right click on the lower right corner of the rectangle which appeared on the figure after you selected =Brush=.
+ - Dragg the rectangle corner in order to cover the whole set of points.
+ - Go back to the =Interaction= menu and select the first row to go back where you were at the start.
++ Select menu: =View= -> =Rotation=.
++ Adjust the speed of the rotation in order to see things properly.
+We easily discern 10 rather well separated clusters. Meaning that an automatic clustering with 10 clusters on the first 3 principal components should do the job.
+
+* Clustering with K-Means 					     :export:
+:PROPERTIES:
+:header-args:python: :session *Python*
+:END:
+
+Since our dynamic visualization shows 10 well separated clusters in 3 dimension, a simple [[http://en.wikipedia.org/wiki/K-means_clustering][k-means]] should do the job. We are using here the [[http://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html#sklearn.cluster.KMeans][KMeans]] class of [[http://scikit-learn.org/stable/index.html][scikit-learn]]: 
+
+#+NAME: KMEANS
+#+BEGIN_SRC python :results silent
+from sklearn.cluster import KMeans
+km10 = KMeans(n_clusters=10, init='k-means++', n_init=100, max_iter=100)
+km10.fit(np.dot(evtsE[goodEvts,:],u[:,0:3]))
+c10 = km10.fit_predict(np.dot(evtsE[goodEvts,:],u[:,0:3]))
+#+END_SRC
+In order to facilitate comparison when models with different numbers of clusters or when different models are used, clusters are sorted by "size". The size is defined here as the sum of the absolute value of the median of the cluster (an L1 norm):
+
+#+NAME: c10b
+#+BEGIN_SRC python :results silent
+cluster_median = list([(i,
+                        np.apply_along_axis(np.median,0,
+                                            evtsE[goodEvts,:][c10 == i,:]))
+                                            for i in range(10)
+                                            if sum(c10 == i) > 0])
+cluster_size = list([np.sum(np.abs(x[1])) for x in cluster_median])
+new_order = list(reversed(np.argsort(cluster_size)))
+new_order_reverse = sorted(range(len(new_order)), key=new_order.__getitem__)
+c10b = [new_order_reverse[i] for i in c10]
+#+END_SRC
+
+
+** Cluster specific plots 					     :export:
+Looking at the first 5 clusters we get Fig. \ref{fig:events-clusters0to4} with:
+
+#+BEGIN_SRC python :results silent 
+plt.subplot(511)
+swp.plot_events(evtsE[goodEvts,:][np.array(c10b) == 0,:])
+ylim([-15,20])
+plt.subplot(512)
+swp.plot_events(evtsE[goodEvts,:][np.array(c10b) == 1,:])
+ylim([-15,20])
+plt.subplot(513)
+swp.plot_events(evtsE[goodEvts,:][np.array(c10b) == 2,:])
+ylim([-15,20])
+plt.subplot(514)
+swp.plot_events(evtsE[goodEvts,:][np.array(c10b) == 3,:])
+ylim([-15,20])
+plt.subplot(515)
+swp.plot_events(evtsE[goodEvts,:][np.array(c10b) == 4,:])
+ylim([-15,20])
+#+END_SRC
+
+#+BEGIN_SRC python  :exports results :results file
+plt.savefig('figsL1/events-clusters0to4.png')
+plt.close()
+'figsL1/events-clusters0to4.png'
+#+END_SRC
+
+#+CAPTION: First 5 clusters. Cluster 0 at the top, cluster 4 at the bottom. Red, cluster specific central / median event. Blue, cluster specific =MAD=. 
+#+NAME: fig:events-clusters0to4
+#+ATTR_LaTeX: :width 0.8\textwidth
+#+RESULTS:
+[[file:figsL1/events-clusters0to4.png]]
+
+Looking at the last 5 clusters we get Fig. \ref{fig:events-clusters5to9} with:
+
+#+BEGIN_SRC python :results silent 
+plt.subplot(511)
+swp.plot_events(evtsE[goodEvts,:][np.array(c10b) == 5,:])
+ylim([-10,10])
+plt.subplot(512)
+swp.plot_events(evtsE[goodEvts,:][np.array(c10b) == 6,:])
+ylim([-10,10])
+plt.subplot(513)
+swp.plot_events(evtsE[goodEvts,:][np.array(c10b) == 7,:])
+ylim([-10,10])
+plt.subplot(514)
+swp.plot_events(evtsE[goodEvts,:][np.array(c10b) == 8,:])
+ylim([-10,10])
+plt.subplot(515)
+swp.plot_events(evtsE[goodEvts,:][np.array(c10b) == 9,:])
+ylim([-10,10])
+#+END_SRC
+
+#+BEGIN_SRC python :session *Python* :exports results :results file
+plt.savefig('figsL1/events-clusters5to9.png')
+plt.close()
+'figsL1/events-clusters5to9.png'
+#+END_SRC
+
+#+CAPTION: Last 5 clusters. Cluster 5 at the top, cluster 9 at the bottom. Red, cluster specific central / median event. Blue, cluster specific =MAD=. Notice the change in ordinate scale compared to the previous figure.
+#+NAME: fig:events-clusters5to9
+#+ATTR_LaTeX: :width 0.8\textwidth
+#+RESULTS:
+[[file:figsL1/events-clusters5to9.png]]
+
+** Results inspection with =GGobi= 				     :export:
+
+We start by checking our clustering quality with =GGobi=. To this end we export the data and the labels of each event:
+
+#+NAME: ToGGobi2
+#+BEGIN_SRC python :results silent
+f = open('evtsEsorted.csv','w')
+w = csv.writer(f)
+w.writerows(np.concatenate((np.dot(evtsE[goodEvts,:],u[:,:8]),
+                            np.array([c10b]).T),
+                            axis=1))
+f.close()
+#+END_SRC
+An again succinct description of how to do the dynamical visual check is:
++ Load the new data into GGobi like before.
++ In menu: =Display= -> =New Scatterplot Display=, select =evtsEsorted.csv=.
++ Change the glyphs like before.
++ In menu: =Tools= -> =Color Schemes=, select a scheme with 10 colors, like =Spectral=, =Spectral 10=.
++ In menu: =Tools= -> =Automatic Brushing=, select =evtsEsorted.csv= tab and, within this tab, select variable =c10b=. Then click on =Apply=.
++ Select =View= -> =Rotation= like before and see your result. 
+
+* Spike "peeling": a "Brute force" superposition resolution 	     :export:
+:PROPERTIES:
+:header-args:python: :session *Python*
+:END:
+
+We are going to resolve (the most "obvious") superpositions by a "recursive peeling method":
+1. Events are detected and cut from the raw data /or from an already peeled version of the data/.
+2. The closest center (in term of Euclidean distance) to the event is found.
+3. If the residual sum of squares (=RSS=), that is: (actual data - best center)$^2$, is smaller than the squared norm of a cut, the best center is subtracted from the data on which detection was performed---jitter is again compensated for at this stage.
+4. Go back to step 1 or stop. 
+
+To apply this procedure, we need, for each cluster, estimates of its center and of its first two derivatives. Function =mk_center_dictionary= does the job for us. We must moreover build our clusters' centers such that they can be used for subtraction, /this implies that we should make them long enough, on both side of the peak, to see them go back to baseline/. Formal parameters =before= and =after= bellow should therefore be set to larger values than the ones used for clustering: 
+
+#+NAME: centers
+#+BEGIN_SRC python :results silent
+centers = { "Cluster " + str(i) :
+            swp.mk_center_dictionary(sp0E[goodEvts][np.array(c10b)==i],
+                                     np.array(data))
+            for i in range(10)}
+#+END_SRC
+
+** First peeling 						     :export:
+Function =classify_and_align_evt= is used next. For each detected event, it matches the closest template, correcting for the jitter, if the closest template is close enough:
+
+#+BEGIN_SRC python :results pp :exports both
+swp.classify_and_align_evt(sp0[0],np.array(data),centers)
+#+END_SRC
+
+#+RESULTS:
+: ['Cluster 7', 281, -0.14107833394834746]
+We can use the function on every detected event. A trick here is to store the matrix version of the data in order to avoid the conversion of the list of vectors (making the data of the different channels) into a matrix for each detected event:
+
+#+NAME: round0
+#+BEGIN_SRC python :results silent
+data0 = np.array(data) 
+round0 = [swp.classify_and_align_evt(sp0[i],data0,centers)
+          for i in range(len(sp0))]
+#+END_SRC
+We can check how many events got unclassified on a total of src_python[:results pp]{len(sp0)} =1766= :
+
+#+BEGIN_SRC python :exports both :results pp 
+len([x[1] for x in round0 if x[0] == '?'])
+#+END_SRC
+
+#+RESULTS:
+: 22
+Using function =predict_data=, we create an ideal data trace given events' positions, events' origins and a clusters' catalog:
+
+#+NAME: pred0
+#+BEGIN_SRC python :results silent
+pred0 = swp.predict_data(round0,centers)
+#+END_SRC
+We then subtract the prediction (=pred0=) from the data (=data0=) to get the "peeled" data (=data1=):
+
+#+NAME: data1
+#+BEGIN_SRC python :results silent
+data1 = data0 - pred0
+#+END_SRC
+We can compare the original data with the result of the "first peeling" to get Fig. \ref{fig:FirstPeeling}:
+
+#+BEGIN_SRC python :results silent 
+plt.plot(tt, data0[0,], color='black')
+plt.plot(tt, data1[0,], color='red',lw=0.3)
+plt.plot(tt, data0[1,]-15, color='black')
+plt.plot(tt, data1[1,]-15, color='red',lw=0.3)
+plt.plot(tt, data0[2,]-25, color='black')
+plt.plot(tt, data1[2,]-25, color='red',lw=0.3)
+plt.plot(tt, data0[3,]-40, color='black')
+plt.plot(tt, data1[3,]-40, color='red',lw=0.3)
+plt.xlabel('Time (s)')
+plt.xlim([0.9,1])
+#+END_SRC
+
+#+BEGIN_SRC python :exports results :results file
+plt.savefig("figsL1/FirstPeeling.png")
+plt.close()
+"figsL1/FirstPeeling.png"
+#+END_SRC
+
+#+CAPTION: 100 ms of the locust data set. Black, original data; red, after first peeling.
+#+NAME: fig:FirstPeeling
+#+ATTR_LaTeX: :width 0.8\textwidth
+#+RESULTS:
+[[file:figsL1/FirstPeeling.png]]
+
+** Second peeling 						     :export:
+We then take =data1= as our former =data0= and we repeat the procedure. We do it with slight modifications: detection is done on a single recording site and a shorter filter length is used before detecting the events. Doing detection on a single site (here site 0) allows us to correct some drawbacks of our crude spike detection method. When we used it the first time we summed the filtered and rectified versions of the data before looking at peaks. This summation can lead to badly defined spike times when two neurons that are large on different recording sites, say site 0 and site 1 fire at nearly the same time. The summed event can then have a peak in between the two true peaks and our jitter correction cannot resolve that. We are therefore going to perform detection on the different sites. The jitter estimation and the subtraction are always going to be done on the 4 recording sites:
+
+#+NAME: sp1
+#+BEGIN_SRC python :results silent
+data_filtered = np.apply_along_axis(lambda x:
+                                    fftconvolve(x,np.array([1,1,1])/3.,
+                                                'same'),
+                                    1,data1)
+data_filtered = (data_filtered.transpose() /
+                 np.apply_along_axis(swp.mad,1,
+                                     data_filtered)).transpose()
+data_filtered[data_filtered < 4] = 0
+sp1 = swp.peak(data_filtered[0,:])
+#+END_SRC
+We classify the events and obtain the new prediction and the new "data":
+
+#+NAME: round1-pred1-data2
+#+BEGIN_SRC python :results silent
+round1 = [swp.classify_and_align_evt(sp1[i],data1,centers)
+          for i in range(len(sp1))]
+pred1 = swp.predict_data(round1,centers)
+data2 = data1 - pred1
+
+#+END_SRC
+We can check how many events got unclassified on a total of src_python[:results pp]{len(sp1)} =244=:
+
+#+BEGIN_SRC python :exports both :results pp 
+len([x[1] for x in round1 if x[0] == '?'])
+#+END_SRC
+
+#+RESULTS:
+: 58
+
+We can compare the first peeling with the second one (Fig. \ref{fig:SecondPeeling}):
+
+#+BEGIN_SRC python :results silent
+plt.plot(tt, data1[0,], color='black')
+plt.plot(tt, data2[0,], color='red',lw=0.3)
+plt.plot(tt, data1[1,]-15, color='black')
+plt.plot(tt, data2[1,]-15, color='red',lw=0.3)
+plt.plot(tt, data1[2,]-25, color='black')
+plt.plot(tt, data2[2,]-25, color='red',lw=0.3)
+plt.plot(tt, data1[3,]-40, color='black')
+plt.plot(tt, data2[3,]-40, color='red',lw=0.3)
+plt.xlabel('Time (s)')
+plt.xlim([0.9,1])
+#+END_SRC
+
+#+BEGIN_SRC python :exports results :results file
+plt.savefig("figsL1/SecondPeeling.png")
+plt.close()
+"figsL1/SecondPeeling.png"
+#+END_SRC
+
+#+CAPTION: 100 ms of the locust data set. Black, first peeling; red, second peeling.
+#+NAME: fig:SecondPeeling
+#+ATTR_LaTeX: :width 0.8\textwidth
+#+RESULTS:
+[[file:figsL1/SecondPeeling.png]]
+
+
+** Third peeling 						     :export:
+We take =data2= as our former =data1= and we repeat the procedure detecting on channel 1:
+
+#+NAME: sp2
+#+BEGIN_SRC python :exports both :results pp
+data_filtered = apply(lambda x:
+                      fftconvolve(x,np.array([1,1,1])/3.,'same'),
+                      1,data2)
+data_filtered = (data_filtered.transpose() / \
+                 apply(swp.mad,1,data_filtered)).transpose()
+data_filtered[data_filtered < 4] = 0
+sp2 = swp.peak(data_filtered[1,:])
+len(sp2)
+#+END_SRC
+
+#+RESULTS: sp2
+: 129
+The classification follows with the prediction and the number of unclassified events:
+
+#+NAME: round2-pred2-data3
+#+BEGIN_SRC python :exports both :results pp
+round2 = [swp.classify_and_align_evt(sp2[i],data2,centers) for i in range(len(sp2))]
+pred2 = swp.predict_data(round2,centers)
+data3 = data2 - pred2
+len([x[1] for x in round2 if x[0] == '?'])
+#+END_SRC
+
+#+RESULTS: round2-pred2-data3
+: 22
+We can compare the second peeling with the third one (Fig. \ref{fig:ThirdPeeling}):
+
+#+BEGIN_SRC python :results silent
+plt.plot(tt, data2[0,], color='black')
+plt.plot(tt, data3[0,], color='red',lw=0.3)
+plt.plot(tt, data2[1,]-15, color='black')
+plt.plot(tt, data3[1,]-15, color='red',lw=0.3)
+plt.plot(tt, data2[2,]-25, color='black')
+plt.plot(tt, data3[2,]-25, color='red',lw=0.3)
+plt.plot(tt, data2[3,]-40, color='black')
+plt.plot(tt, data3[3,]-40, color='red',lw=0.3)
+plt.xlabel('Time (s)')
+plt.xlim([0.9,1])
+#+END_SRC
+
+#+BEGIN_SRC python :exports results :results file
+plt.savefig("figsL1/ThirdPeeling.png")
+plt.close()
+'figsL1/ThirdPeeling.png'
+#+END_SRC
+
+#+CAPTION: 100 ms of the locust data set. Black, second peeling; red, third peeling. /In this portion of data we see events but none belonging to our centers catalog/.
+#+NAME: fig:ThirdPeeling
+#+ATTR_LaTeX: :width 0.8\textwidth
+#+RESULTS:
+[[file:figsL1/ThirdPeeling.png]]
+
+** Fourth peeling 						     :export:
+We take =data3= as our former =data2= and we repeat the procedure detecting on channel 2:
+
+#+NAME: sp3
+#+BEGIN_SRC python :exports both :results pp
+data_filtered = apply(lambda x:
+                      fftconvolve(x,np.array([1,1,1])/3.,'same'),
+                      1,data3)
+data_filtered = (data_filtered.transpose() / \
+                 apply(swp.mad,1,data_filtered)).transpose()
+data_filtered[data_filtered < 4] = 0
+sp3 = swp.peak(data_filtered[2,:])
+len(sp3)
+#+END_SRC
+
+#+RESULTS: sp3
+: 99
+The classification follows with the prediction and the number of unclassified events:
+
+#+NAME: round3-pred3-data4
+#+BEGIN_SRC python :exports both :results pp
+round3 = [swp.classify_and_align_evt(sp3[i],data3,centers) for i in range(len(sp3))]
+pred3 = swp.predict_data(round3,centers)
+data4 = data3 - pred3
+len([x[1] for x in round3 if x[0] == '?'])
+#+END_SRC
+
+#+RESULTS: round3-pred3-data4
+: 16
+We can compare the third peeling with the fourth one (Fig. \ref{fig:FourthPeeling}) looking at a different part of the data than on the previous figures:
+
+#+BEGIN_SRC python :results silent
+plt.plot(tt, data3[0,], color='black')
+plt.plot(tt, data4[0,], color='red',lw=0.3)
+plt.plot(tt, data3[1,]-15, color='black')
+plt.plot(tt, data4[1,]-15, color='red',lw=0.3)
+plt.plot(tt, data3[2,]-25, color='black')
+plt.plot(tt, data4[2,]-25, color='red',lw=0.3)
+plt.plot(tt, data3[3,]-40, color='black')
+plt.plot(tt, data4[3,]-40, color='red',lw=0.3)
+plt.xlabel('Time (s)')
+plt.xlim([3.9,4])
+#+END_SRC
+
+#+BEGIN_SRC python :exports results :results file
+plt.savefig("figsL1/FourthPeeling.png")
+plt.close()
+"figsL1/FourthPeeling.png"
+#+END_SRC
+
+#+CAPTION: 100 ms of the locust data set (different time frame than on the previous plot). Black, third peeling; red, fourth peeling. /On this portion of the trace, nothing was detected on site 2 (the third one, remember that =Python= starts numbering at 0)/.
+#+NAME: fig:FourthPeeling
+#+ATTR_LaTeX: :width 0.8\textwidth
+#+RESULTS:
+[[file:figsL1/FourthPeeling.png]]
+
+** Fifth peeling 						     :export: 
+We take =data4= as our former =data3= and we repeat the procedure detecting on channel 3:
+
+#+NAME: sp4
+#+BEGIN_SRC python :exports both :results pp
+data_filtered = apply(lambda x:
+                      fftconvolve(x,np.array([1,1,1])/3.,'same'),
+                      1,data4)
+data_filtered = (data_filtered.transpose() / \
+                 apply(swp.mad,1,data_filtered)).transpose()
+data_filtered[data_filtered < 4] = 0
+sp4 = swp.peak(data_filtered[3,:])
+len(sp4)
+#+END_SRC
+
+#+RESULTS: sp4
+: 170
+
+The classification follows with the prediction and the number of unclassified events:
+
+#+NAME: round4-pred4-data5
+#+BEGIN_SRC python :exports both :results pp
+round4 = [swp.classify_and_align_evt(sp4[i],data4,centers) for i in range(len(sp4))]
+pred4 = swp.predict_data(round4,centers)
+data5 = data4 - pred4
+len([x[1] for x in round4 if x[0] == '?'])
+#+END_SRC
+
+#+RESULTS: round4-pred4-data5
+: 53
+
+We can compare the third peeling with the fourth one (Fig. \ref{fig:FifthPeeling}):
+
+#+BEGIN_SRC python :results silent
+plt.plot(tt, data4[0,], color='black')
+plt.plot(tt, data5[0,], color='red',lw=0.3)
+plt.plot(tt, data4[1,]-15, color='black')
+plt.plot(tt, data5[1,]-15, color='red',lw=0.3)
+plt.plot(tt, data4[2,]-25, color='black')
+plt.plot(tt, data5[2,]-25, color='red',lw=0.3)
+plt.plot(tt, data4[3,]-40, color='black')
+plt.plot(tt, data5[3,]-40, color='red',lw=0.3)
+plt.xlabel('Time (s)')
+plt.xlim([3.9,4])
+#+END_SRC
+
+#+BEGIN_SRC python :exports results :results file
+plt.savefig("figsL1/FifthPeeling.png")
+plt.close()
+"figsL1/FifthPeeling.png"
+#+END_SRC
+
+#+CAPTION: 100 ms of the locust data set. Black, fourth peeling; red, fifth peeling. Two events got detected on channel 3 and subtracted.
+#+NAME: fig:FifthPeeling
+#+ATTR_LaTeX: :width 0.8\textwidth
+#+RESULTS:
+[[file:figsL1/FifthPeeling.png]]
+
+** General comparison 						     :export:
+We can compare the raw data with the fifth peeling on the first second (Fig. \ref{fig:RawVSFifthPeeling}):
+
+#+BEGIN_SRC python :results silent
+plt.plot(tt, data0[0,], color='black')
+plt.plot(tt, data5[0,], color='red',lw=0.3)
+plt.plot(tt, data0[1,]-15, color='black')
+plt.plot(tt, data5[1,]-15, color='red',lw=0.3)
+plt.plot(tt, data0[2,]-25, color='black')
+plt.plot(tt, data5[2,]-25, color='red',lw=0.3)
+plt.plot(tt, data0[3,]-40, color='black')
+plt.plot(tt, data5[3,]-40, color='red',lw=0.3)
+plt.xlabel('Time (s)')
+plt.xlim([0,1])
+#+END_SRC
+
+#+BEGIN_SRC python :exports results :results file
+plt.savefig("figsL1/RawVSFifthPeeling.png")
+plt.close()
+"figsL1/RawVSFifthPeeling.png"
+#+END_SRC
+
+#+CAPTION: The first second of the locust data set. Black, raw data; red, fifth peeling.
+#+NAME: fig:RawVSFifthPeeling
+#+ATTR_LaTeX: :width 0.8\textwidth
+#+RESULTS:
+[[file:figsL1/RawVSFifthPeeling.png]]
+
+We can also look at the remaining unclassified events; they don't look like any of our templates (Fig. \ref{fig:FifthPeelingRemainingBad}):
+
+#+BEGIN_SRC python :results silent
+bad_ones = [x[1] for x in round4 if x[0] == '?']
+r4BE = swp.mk_events(bad_ones, data4)
+swp.plot_events(r4BE)
+#+END_SRC
+
+#+BEGIN_SRC python :exports results :results file
+plt.savefig("figsL1/FifthPeelingRemainingBad.png")
+plt.close()
+"figsL1/FifthPeelingRemainingBad.png"
+#+END_SRC
+
+#+CAPTION: The 53 remaining bad events after the fifth peeling.
+#+NAME: fig:FifthPeelingRemainingBad
+#+ATTR_LaTeX: :width 0.8\textwidth
+#+RESULTS:
+[[file:figsL1/FifthPeelingRemainingBad.png]]
+
+* Getting the spike trains 					     :export:
+:PROPERTIES:
+:header-args:python: :session *Python*
+:END:
+
+Once we have decided to stop the peeling iterations we can extract our spike trains with (notice the syntax difference between =Python 3= and =Python 2=):
+
+#+NAME: spike_trains
+#+BEGIN_SRC python :results silent
+round_all = round0.copy() # Python 3
+# round_all = round0[:] # Python 2
+round_all.extend(round1)
+round_all.extend(round2)
+round_all.extend(round3)
+round_all.extend(round4)
+spike_trains = { n : np.sort([x[1] + x[2] for x in round_all
+                              if x[0] == n]) for n in list(centers)}
+#+END_SRC
+The number of spikes attributed to each neuron is:
+
+#+BEGIN_SRC python :exports both :results pp
+[(n,len(spike_trains[n])) for n in list(centers)]
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+[('Cluster 7', 233),
+ ('Cluster 9', 588),
+ ('Cluster 8', 456),
+ ('Cluster 2', 101),
+ ('Cluster 6', 238),
+ ('Cluster 1', 173),
+ ('Cluster 5', 149),
+ ('Cluster 3', 173),
+ ('Cluster 0', 92),
+ ('Cluster 4', 63)]
+#+end_example
 
 
 * Individual function definitions 				     :export:
@@ -652,16 +1660,16 @@ plt.plot(evtsE[goodEvts,:][np.array(c10b)==1,:][50,:],color='black')
 #+END_SRC
 
 #+BEGIN_SRC python :session *Python*  :exports results :results file
-plt.savefig('img/locust-sorting-python/JitterIllustrationCluster1Event50.png')
+plt.savefig('figsL1/JitterIllustrationCluster1Event50.png')
 plt.close()
-'img/locust-sorting-python/JitterIllustrationCluster1Event50.png'
+'figsL1/JitterIllustrationCluster1Event50.png'
 #+END_SRC
 
 #+CAPTION: The median event of cluster 1 (red) together with event 50 of the same cluster (black).
 #+NAME: fig:JitterIllustrationCluster1Event50
 #+ATTR_LaTeX: :width 0.8\textwidth
 #+RESULTS:
-[[file:img/locust-sorting-python/JitterIllustrationCluster1Event50.png]]
+[[file:figsL1/JitterIllustrationCluster1Event50.png]]
 
 A Taylor expansion shows that if we write /g(t)/ the observed 50th event, δ the sampling jitter and /f(t)/ the actual waveform of the event then:
 \begin{equation}
@@ -692,16 +1700,16 @@ plt.plot(1.5*c1D_median+1.5**2/2*c1DD_median,color='black',lw=2)
 #+END_SRC
 
 #+BEGIN_SRC python :session *Python*  :exports results :results file
-plt.savefig('img/locust-sorting-python/JitterIllustrationCluster1Event50b.png')
+plt.savefig('figsL1/JitterIllustrationCluster1Event50b.png')
 plt.close()
-'img/locust-sorting-python/JitterIllustrationCluster1Event50b.png'
+'figsL1/JitterIllustrationCluster1Event50b.png'
 #+END_SRC
 
 #+CAPTION: The median event of cluster 1 subtracted from event 50 of the same cluster (red); 1.5 times the first derivative of the median event (blue)—corresponding to δ=1.5—; 1.5 times the first derivative + 1.5^2/2 times the second (black)—corresponding again to δ=1.5—.
 #+NAME: fig:JitterIllustrationCluster1Event50b
 #+ATTR_LaTeX: :width 0.8\textwidth
 #+RESULTS:
-[[file:img/locust-sorting-python/JitterIllustrationCluster1Event50b.png]]
+[[file:figsL1/JitterIllustrationCluster1Event50b.png]]
 
 If we neglect the $δ^2$ term we quickly arrive at:
 \begin{equation}
@@ -723,7 +1731,7 @@ delta_hat
 #+END_SRC
 
 #+RESULTS: delta_hat
-: 1.4917182304326999
+: 1.4917182304327024
 
 We can use this estimated value of =delta_hat= as an initial guess for a procedure refining the estimate using also the $δ^2$ term. The obvious quantity we should try to minimize is the residual sum of square, =RSS= defined by:
 \[
@@ -761,16 +1769,16 @@ plt.axvline(x=delta_hat,color='red')
 #+END_SRC
 
 #+BEGIN_SRC python :session *Python*  :exports results :results file
-plt.savefig('img/locust-sorting-python/JitterIllustrationCluster1Event50c.png')
+plt.savefig('figsL1/JitterIllustrationCluster1Event50c.png')
 plt.close()
-'img/locust-sorting-python/JitterIllustrationCluster1Event50c.png'
+'figsL1/JitterIllustrationCluster1Event50c.png'
 #+END_SRC
 
 #+CAPTION: The =RSS= as a function of δ for event 50 of cluster 1. Left, $δ \in [-5,5]$; right, $δ \in [\hat{δ}-0.5,\hat{δ}+0.5]$ and the red vertical line shows $\hat{δ}$. 
 #+NAME: fig:JitterIllustrationCluster1Event50c
 #+ATTR_LaTeX: :width 0.8\textwidth
 #+RESULTS:
-[[file:img/locust-sorting-python/JitterIllustrationCluster1Event50c.png]]
+[[file:figsL1/JitterIllustrationCluster1Event50c.png]]
 
 The left panel of the above figure shows that our initial guess for $\hat{δ}$ is not bad but still approximately 0.2 units away from the actual minimum. The classical way to refine our δ estimate—in 'nice situations' where the function we are trying to minimize is locally convex—is to use the [[http://en.wikipedia.org/wiki/Newton%27s_method][Newton-Raphson algorithm]] which consists in approximating locally the 'target function' (here our =RSS= function) by a parabola having locally the same first and second derivatives, before jumping to the minimum of this approximating parabola. If we develop our previous expression of $\mathrm{RSS}(δ)$ we get:
 \[
@@ -834,17 +1842,18 @@ plt.plot(dd_fine,
          (dd_fine-delta_hat)**2/2*rssDD_at_delta0,color='blue',lw=2)
 plt.axvline(x=delta_1,color='grey')
 #+END_SRC
+
 #+BEGIN_SRC python :session *Python*  :exports results :results file
-plt.savefig('img/locust-sorting-python/JitterIllustrationCluster1Event50d.png')
+plt.savefig('figsL1/JitterIllustrationCluster1Event50d.png')
 plt.close()
-'img/locust-sorting-python/JitterIllustrationCluster1Event50d.png'
+'figsL1/JitterIllustrationCluster1Event50d.png'
 #+END_SRC
 
 #+CAPTION: The =RSS= as a function of δ for event 50 of cluster 1  (black), the red vertical line shows $\hat{δ}$. In blue, the approximating parabola at $\hat{δ}$. The grey vertical line shows the minimum of the approximating parabola.
 #+NAME: fig:JitterIllustrationCluster1Event50d
 #+ATTR_LaTeX: :width 0.8\textwidth
 #+RESULTS:
-[[file:img/locust-sorting-python/JitterIllustrationCluster1Event50d.png]]
+[[file:figsL1/JitterIllustrationCluster1Event50d.png]]
 
 Subtracting the second order in δ approximation of f(t+δ) from the observed 50th event of cluster 1 we get Fig. \ref{fig:JitterIllustrationCluster1Event50e}:
 
@@ -857,17 +1866,18 @@ plt.plot(evtsE[goodEvts,:][np.array(c10b)==1,:][50,:],
 plt.plot(c1_median+delta_1*c1D_median+delta_1**2/2*c1DD_median,
          color='blue',lw=1)
 #+END_SRC 
+
 #+BEGIN_SRC python :session *Python*  :exports results :results file
-plt.savefig('img/locust-sorting-python/JitterIllustrationCluster1Event50e.png')
+plt.savefig('figsL1/JitterIllustrationCluster1Event50e.png')
 plt.close()
-'img/locust-sorting-python/JitterIllustrationCluster1Event50e.png'
+'figsL1/JitterIllustrationCluster1Event50e.png'
 #+END_SRC
 
 #+CAPTION: Event 50 of cluster 1 (black), second order approximation of f(t+δ) (blue) and residual (red) for δ—obtained by a succession of a linear regression (order 1) and a single Newton-Raphson step—equal to: src_python[:session *Python*  :results pp]{delta_1} =1.3748048144324905=.
 #+NAME: fig:JitterIllustrationCluster1Event50e
 #+ATTR_LaTeX: :width 0.8\textwidth
 #+RESULTS:
-[[file:img/locust-sorting-python/JitterIllustrationCluster1Event50e.png]]
+[[file:figsL1/JitterIllustrationCluster1Event50e.png]]
 
 *** Function definition
 
