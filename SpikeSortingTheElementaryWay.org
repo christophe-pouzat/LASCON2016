@@ -107,8 +107,13 @@ They were stored as floats coded on 64 bits and compressed with =gnuzip=. So we 
 
 #+NAME: unzip-data
 #+BEGIN_SRC python :results silent
-from os import system
-[system("gunzip " + fn) for fn in data_names]
+import gzip
+import shutil
+data_snames = ['Locust_' + str(i) + '.dat' for i in range(1,5)]
+for in_name, out_name in zip(data_names,data_snames):
+    with gzip.open(in_name,'rb') as f_in:
+        with open(out_name,'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
 #+END_SRC
 20 seconds of data sampled at 15 kHz are contained in these files (see [[http://xtof.perso.math.cnrs.fr/pdf/Pouzat+:2002.pdf][PouzatEtAl_2002]] for details). Four
 files corresponding to the four electrodes or recording sites of a

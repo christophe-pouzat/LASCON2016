@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2016-01-18 lun. 21:13 -->
+<!-- 2016-01-19 mar. 18:35 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="viewport" content="width=device-width, initial-scale=1" />
 <title>Spike Sorting The Elementary Way</title>
@@ -270,8 +270,13 @@ They were stored as floats coded on 64 bits and compressed with <code>gnuzip</co
 
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock2">from os import system
-[system("gunzip " + fn) for fn in data_names]
+<pre class="src src-python" id="orgsrcblock2">import gzip
+import shutil
+data_snames = ['Locust_' + str(i) + '.dat' for i in range(1,5)]
+for in_name, out_name in zip(data_names,data_snames):
+    with gzip.open(in_name,'rb') as f_in:
+        with open(out_name,'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
 </pre>
 </div>
 <p>
@@ -2866,7 +2871,7 @@ And the function:
 <div id="postamble" class="status">
 <p class="date">Date: <span class="timestamp-wrapper"><span class="timestamp">&lt;2016-01-18 lun.&gt;</span></span></p>
 <p class="author">Author: Christophe Pouzat</p>
-<p class="date">Created: 2016-01-18 lun. 21:13</p>
+<p class="date">Created: 2016-01-19 mar. 18:35</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
