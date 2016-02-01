@@ -352,7 +352,7 @@ We see that the behavior of the "away from normal" fraction is much more homogen
 :header-args:python: :session *Python*
 :END:
 
-We are going to filter the data slightly using a "box" filter of length 3. That is, the data points of the original trace are going to be replaced by the average of themselves with their four nearest neighbors. We will then scale the filtered traces such that the =MAD= is one on each recording sites and keep only the parts of the signal which above 4:
+We are going to filter the data slightly using a "box" filter of length 5. That is, the data points of the original trace are going to be replaced by the average of themselves with their four nearest neighbors. We will then scale the filtered traces such that the =MAD= is one on each recording sites and keep only the parts of the signal above 4:
 
 #+NAME: filter-data
 #+BEGIN_SRC python :results silent

@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2016-01-19 mar. 18:35 -->
+<!-- 2016-02-01 lun. 15:13 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="viewport" content="width=device-width, initial-scale=1" />
 <title>Spike Sorting The Elementary Way</title>
@@ -568,7 +568,7 @@ We see that the behavior of the "away from normal" fraction is much more homogen
 <h2 id="orgheadline13"><span class="section-number-2">6</span> Detect peaks</h2>
 <div class="outline-text-2" id="text-6">
 <p>
-We are going to filter the data slightly using a "box" filter of length 3. That is, the data points of the original trace are going to be replaced by the average of themselves with their four nearest neighbors. We will then scale the filtered traces such that the <code>MAD</code> is one on each recording sites and keep only the parts of the signal which above 4:
+We are going to filter the data slightly using a "box" filter of length 5. That is, the data points of the original trace are going to be replaced by the average of themselves with their four nearest neighbors. We will then scale the filtered traces such that the <code>MAD</code> is one on each recording sites and keep only the parts of the signal above 4:
 </p>
 
 <div class="org-src-container">
@@ -2871,7 +2871,7 @@ And the function:
 <div id="postamble" class="status">
 <p class="date">Date: <span class="timestamp-wrapper"><span class="timestamp">&lt;2016-01-18 lun.&gt;</span></span></p>
 <p class="author">Author: Christophe Pouzat</p>
-<p class="date">Created: 2016-01-19 mar. 18:35</p>
+<p class="date">Created: 2016-02-01 lun. 15:13</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
