@@ -664,7 +664,8 @@ def mk_cable_fcts(Cm = 1.0,
                   GK = 36.0,
                   EK = -12.0,
                   GL = 0.3,
-                  EL = 10.5987):
+                  EL = 10.5987,
+                  T = 6.3):
     """Returns functions for H & H axon simulation
     
     Formal parameters:
@@ -676,6 +677,7 @@ def mk_cable_fcts(Cm = 1.0,
     EK: potassium reversal potential [mV]
     GL: leak conductance density [mS / cm^2]
     EL: leak reversal potential [mV]
+    T: a positive double, the temperature in Celsius
 
     Returns:
     D_fct: a function of the axon radius in cm that
@@ -688,14 +690,50 @@ def mk_cable_fcts(Cm = 1.0,
                    the injected current that performs the simulation
     """
     import numpy as np
+    Q = 3**((T-6.3)/10)
     def D_fct(a):
         return a / (2.0 * rho * Cm)
-    <<n-activation>>
-    <<F_n-and-vF_n-definitions>>
-    <<m-activation>>
-    <<F_m-and-vF_m-definitions>>
-    <<h-activation>>
-    <<F_h-and-vF_h-definitions>>
+    def alpha_n(v):
+        if np.abs(v-10.0) < 1e-10:
+            return 0.1
+        else:
+            return 0.01*(10.0 - v)/(np.exp((10.0-v)/10.0)-1.0)
+    def beta_n(v):
+        return 0.125*np.exp(-0.0125*v)
+    n_inf = np.vectorize(lambda v: alpha_n(v)/(alpha_n(v) + beta_n(v)))
+    def F_n(v,n):
+        if np.abs(v-10.0) < 1e-10:
+            alpha = 0.1
+        else:
+            alpha = 0.01*(10.0 - v)/(np.exp((10.0-v)/10.0)-1.0)
+        beta = 0.125*np.exp(-0.0125*v)
+        return (alpha*(1-n)-beta*n)*Q
+    vF_n = np.vectorize(F_n)     
+    def alpha_m(v):
+        if np.abs(v-25.0) < 1e-10:
+            return 1.0
+        else:
+            return 0.1*(25.0 - v)/(np.exp((25.0 - v)/10.0)-1.0)
+    def beta_m(v):
+        return 4*np.exp(-.0555*v)
+    m_inf = np.vectorize(lambda v: alpha_m(v)/(alpha_m(v) + beta_m(v)))
+    def F_m(v,m):
+        if np.abs(v-25.0) < 1e-10:
+            alpha = 1.0
+        else:
+            alpha =  0.1*(25.0 - v)/(np.exp((25.0 - v)/10.0)-1.0)
+        beta = 4*np.exp(-.0555*v)
+        return (alpha*(1-m)-beta*m)*Q
+    vF_m = np.vectorize(F_m)
+    def alpha_h(v):
+        return 0.07*np.exp(-0.05*v)
+    def beta_h(v):
+        return 1.0/(np.exp((30.0 - v)/10.0) + 1.0)
+    def h_inf(v):
+        return alpha_h(v)/(alpha_h(v) + beta_h(v))
+    def F_h(v,h):
+        return Q*(0.07*np.exp(-0.05*v)*(1-h)-1.0/(np.exp((30.0 - v)/10.0) + 1.0)*h)
+    vF_h = np.vectorize(F_h)
     def F_V(v,n,m,h,Ia):
         return (GK*n**4*(EK-v)+GNa*m**3*h*(ENa-v)+GL*(EL-v)+Ia)/Cm
     vF_V = np.vectorize(F_V)
@@ -704,11 +742,11 @@ def mk_cable_fcts(Cm = 1.0,
         return np.sqrt(a/2/rho/sigma_m_rest)
     def r_fct(a,Delta_x,Delta_t):
         return D_fct(a)*Delta_t*1000/Delta_x**2
-    <<explicit_step-definition>>
-    <<lees_step-definition>>
     def sim_with_lees(a,L,duration,
                       Delta_x,Delta_t,
                       Ia_amp, Ia_duration):
+        <<explicit_step-definition>>
+        <<lees_step-definition>>
         r = r_fct(a,Delta_x,Delta_t)
         M = int(np.ceil(L/Delta_x))
         N = int(np.ceil(duration/Delta_t))
@@ -766,6 +804,19 @@ for i in range(0,442,40):
 
 The results are not shown since they are identical to the previous ones but you are invited to check for yourself.
 
+Figure 2 of Cooley and Dodge (1966) can be replicated with:
+
+#+BEGIN_SRC python :eval no-export :results silent
+D_cd,r_cd,lambda_cd,sim_cd = mk_cable_fcts(rho=34.5,EL=10.598,T=18.5)
+v_cd,n_cd,m_cd,h_cd = sim_cd(0.0238,7,10,0.025,0.001,2500,0.2)
+tt2 = np.arange(v_cd.shape[0])*0.001
+plt.plot(tt2,v_cd[:,0])
+plt.plot(tt2,v_cd[:,40])
+plt.plot(tt2,v_cd[:,80])
+plt.plot(tt2,v_cd[:,120])
+plt.xlim(0,3.5)
+#+END_SRC
+ 
 * Numerical investigation of the radius effect on the extracellular potential
 
 Equation 10 shows an explicite axon's radius square but says nothing on the effect of radius change on $\Delta{}V_m$. If we use our newly developped code to get the picture with an axon of 4 $\mu{}m$ diameter we see that:
