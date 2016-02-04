@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2016-01-18 lun. 18:38 -->
+<!-- 2016-02-04 jeu. 10:42 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="viewport" content="width=device-width, initial-scale=1" />
 <title>Origin Of The (High Frequency) Extra-cellular Signal</title>
@@ -177,7 +177,7 @@ for the JavaScript code in this tag.
 <li><a href="#orgheadline3">2.2. Membrane current density</a></li>
 </ul>
 </li>
-<li><a href="#orgheadline11">3. Numerical integration of the H &amp; H equation</a>
+<li><a href="#orgheadline12">3. Numerical integration of the H &amp; H equation</a>
 <ul>
 <li><a href="#orgheadline8">3.1. A standardized form for the non-linear reaction-diffusion equations</a>
 <ul>
@@ -188,11 +188,12 @@ for the JavaScript code in this tag.
 </li>
 <li><a href="#orgheadline9">3.2. Python code doing the job</a></li>
 <li><a href="#orgheadline10">3.3. Some functions definitions</a></li>
+<li><a href="#orgheadline11">3.4. Checking against Cooley and Dodge (1966) results</a></li>
 </ul>
 </li>
-<li><a href="#orgheadline13">4. Numerical investigation of the radius effect on the extracellular potential</a>
+<li><a href="#orgheadline14">4. Numerical investigation of the radius effect on the extracellular potential</a>
 <ul>
-<li><a href="#orgheadline12">4.1. A fast way to do the job</a></li>
+<li><a href="#orgheadline13">4.1. A fast way to do the job</a></li>
 </ul>
 </li>
 </ul>
@@ -325,8 +326,8 @@ At that stage, in order to go further, we need an explicit expression or value f
 </div>
 </div>
 
-<div id="outline-container-orgheadline11" class="outline-2">
-<h2 id="orgheadline11"><span class="section-number-2">3</span> Numerical integration of the H &amp; H equation</h2>
+<div id="outline-container-orgheadline12" class="outline-2">
+<h2 id="orgheadline12"><span class="section-number-2">3</span> Numerical integration of the H &amp; H equation</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 We follow here the exposition of Tuckwell (1988) <i>Introduction to theoretical neurobiology. Volume 2.</i> CUP, pp 54-70<sup><a id="fnr.1" class="footref" href="#fn.1">1</a></sup>. We want to solve the following set of equations:
@@ -340,7 +341,7 @@ We follow here the exposition of Tuckwell (1988) <i>Introduction to theoretical 
 \end{align}
 
 <p>
-where \(C_m\) is the membrane capacitance per unit area [F/cm\(^2\)]; \(\overline{g}_K\), \(\overline{g}_{Na}\) and \(g_l\) are the potassium, sodium and leak conductances per unit area [S/cm\(^2\)]; \(V_K\), \(V_{Na}\) and \(V_l\) are the potassium, sodium and leak currents reversal potentials [mV] and \(I_a\) is "externally" applied current per unit area [mA/cm\(^2\)] and all the \(\alpha\) and \(\beta\) functions are measured in [1/ms]. 
+where \(C_m\) is the membrane capacitance per unit area [\(\mu{}F/cm^2\)]; \(\overline{g}_K\), \(\overline{g}_{Na}\) and \(g_l\) are the potassium, sodium and leak conductances per unit area [mS/cm\(^2\)]; \(V_K\), \(V_{Na}\) and \(V_l\) are the potassium, sodium and leak currents reversal potentials [mV] and \(I_a\) is "externally" applied current per unit area [\(\mu{}A/cm^2\)] and all the \(\alpha\) and \(\beta\) functions are measured in [1/ms]. <b>You have to be careful here with the units since</b> \(\sigma_i\) <b>is usually given in [S/cm] leading to a first term on the right hand side of equation 11 in</b> [mA/cm\(^2\)] <b>while the left hand side as well as the remaining terms on the right hand side are in</b> [\(\mu{}A/cm^2\)]. 
 </p>
 </div>
 
@@ -1025,7 +1026,7 @@ Before going further, writing a couple of functions abstracting the many pieces 
 <h3 id="orgheadline10"><span class="section-number-3">3.3</span> Some functions definitions</h3>
 <div class="outline-text-3" id="text-3-3">
 <p>
-We want a function that takes axon geometrical parameters&#x2014;radius and length&#x2014;, simulation time, space and time steps and applied current as formal parameters and for which all the other parameters (reversal potentials, conductances, etc) are set. If we want to be able to change one or several of these other parameters, it is worth exploiting one of the great features of <a href="https://en.wikipedia.org/wiki/Python_syntax_and_semantics">Python</a>: is supports <a href="https://en.wikipedia.org/wiki/Closure_(computer_programming)">lexical closures</a>; and that allows us to write functions returning other functions. That's what we will do here (remark that all the functions previously defined are reused directly, except <code>F_V</code> since the necessary parameters are in the lexical scope of the function definition).
+We want a function that takes axon geometrical parameters&#x2014;radius and length&#x2014;, simulation time, space and time steps and applied current as formal parameters and for which all the other parameters (reversal potentials, conductances, etc) are set. If we want to be able to change one or several of these other parameters, it is worth exploiting one of the great features of <a href="https://en.wikipedia.org/wiki/Python_syntax_and_semantics">Python</a>: is supports <a href="https://en.wikipedia.org/wiki/Closure_(computer_programming)">lexical closures</a>; and that allows us to write functions returning other functions. That's what we will do here (remark that all the functions previously defined are reused directly, except <code>F_V</code> since the necessary parameters are in the lexical scope of the function definition). In order to compare our code output with cases published in the literature like <a href="http://www.ncbi.nlm.nih.gov/pmc/articles/PMC1368016/">Cooley and Dodge (1966)</a> we add a <i>temperature</i>, <code>T</code>, formal parameter. The H &amp; H model parameters we used til now are valid at 6.3°C and we implement the temperature dependence of the rate equations given by H &amp; H, Cooley and Dodge, Tuckwell, etc&#x2026;  
 </p>
 
 <div class="org-src-container">
@@ -1037,7 +1038,8 @@ We want a function that takes axon geometrical parameters&#x2014;radius and leng
                   GK = 36.0,
                   EK = -12.0,
                   GL = 0.3,
-                  EL = 10.5987):
+                  EL = 10.5987,
+                  T = 6.3):
     """Returns functions for H &amp; H axon simulation
     
     Formal parameters:
@@ -1049,6 +1051,7 @@ We want a function that takes axon geometrical parameters&#x2014;radius and leng
     EK: potassium reversal potential [mV]
     GL: leak conductance density [mS / cm^2]
     EL: leak reversal potential [mV]
+    T: a positive double, the temperature in Celsius
 
     Returns:
     D_fct: a function of the axon radius in cm that
@@ -1061,6 +1064,7 @@ We want a function that takes axon geometrical parameters&#x2014;radius and leng
                    the injected current that performs the simulation
     """
     import numpy as np
+    Q = 3**((T-6.3)/10)
     def D_fct(a):
         return a / (2.0 * rho * Cm)
     def alpha_n(v):
@@ -1077,15 +1081,15 @@ We want a function that takes axon geometrical parameters&#x2014;radius and leng
         else:
             alpha = 0.01*(10.0 - v)/(np.exp((10.0-v)/10.0)-1.0)
         beta = 0.125*np.exp(-0.0125*v)
-        return alpha*(1-n)-beta*n
-    vF_n = np.vectorize(F_n)    
+        return (alpha*(1-n)-beta*n)*Q
+    vF_n = np.vectorize(F_n)     
     def alpha_m(v):
         if np.abs(v-25.0) &lt; 1e-10:
             return 1.0
         else:
             return 0.1*(25.0 - v)/(np.exp((25.0 - v)/10.0)-1.0)
     def beta_m(v):
-            return 4*np.exp(-.0555*v)
+        return 4*np.exp(-.0555*v)
     m_inf = np.vectorize(lambda v: alpha_m(v)/(alpha_m(v) + beta_m(v)))
     def F_m(v,m):
         if np.abs(v-25.0) &lt; 1e-10:
@@ -1093,7 +1097,7 @@ We want a function that takes axon geometrical parameters&#x2014;radius and leng
         else:
             alpha =  0.1*(25.0 - v)/(np.exp((25.0 - v)/10.0)-1.0)
         beta = 4*np.exp(-.0555*v)
-        return alpha*(1-m)-beta*m
+        return (alpha*(1-m)-beta*m)*Q
     vF_m = np.vectorize(F_m)
     def alpha_h(v):
         return 0.07*np.exp(-0.05*v)
@@ -1102,7 +1106,7 @@ We want a function that takes axon geometrical parameters&#x2014;radius and leng
     def h_inf(v):
         return alpha_h(v)/(alpha_h(v) + beta_h(v))
     def F_h(v,h):
-        return 0.07*np.exp(-0.05*v)*(1-h)-1.0/(np.exp((30.0 - v)/10.0) + 1.0)*h
+        return Q*(0.07*np.exp(-0.05*v)*(1-h)-1.0/(np.exp((30.0 - v)/10.0) + 1.0)*h)
     vF_h = np.vectorize(F_h)
     def F_V(v,n,m,h,Ia):
         return (GK*n**4*(EK-v)+GNa*m**3*h*(ENa-v)+GL*(EL-v)+Ia)/Cm
@@ -1112,42 +1116,42 @@ We want a function that takes axon geometrical parameters&#x2014;radius and leng
         return np.sqrt(a/2/rho/sigma_m_rest)
     def r_fct(a,Delta_x,Delta_t):
         return D_fct(a)*Delta_t*1000/Delta_x**2
-    def explicit_step(v,n,m,h,Ia):
-        v_new = np.copy(v)
-        n_new = np.copy(n)
-        m_new = np.copy(m)
-        h_new = np.copy(h)
-        reaction_term = Delta_t * vF_V(v,n,m,h,Ia)
-        diffusion_term = np.zeros(len(v))
-        diffusion_term[1:-1] = (v[0:-2]-2*v[1:-1]+v[2:])*r
-        diffusion_term[0] = 2*r*(v[1]-v[0])
-        diffusion_term[-1] = 2*r*(v[-2]-v[-1])
-        v_new += diffusion_term + reaction_term
-        n_new += Delta_t*vF_n(v,n)
-        m_new += Delta_t*vF_m(v,m)
-        h_new += Delta_t*vF_h(v,h)
-        return v_new,n_new,m_new,h_new
-    def lees_step(v_old,n_old,m_old,h_old,Ia_old,
-                  v_present,n_present,m_present,h_present,Ia_present):
-        from scipy.linalg import solve_banded
-        v_extra = 1.5*v_present-0.5*v_old # extrapolated mid-point value
-        n_extra = 1.5*n_present-0.5*n_old # extrapolated mid-point value
-        m_extra = 1.5*m_present-0.5*m_old # extrapolated mid-point value          
-        h_extra = 1.5*h_present-0.5*h_old # extrapolated mid-point value
-        Ia_extra = 1.5*Ia_present-0.5*Ia_old # extrapolated mid-point value
-        n_new = np.copy(n_present)+Delta_t*vF_n(v_extra,n_extra)
-        m_new = np.copy(m_present)+Delta_t*vF_m(v_extra,m_extra)
-        h_new = np.copy(h_present)+Delta_t*vF_h(v_extra,h_extra)
-        reaction_term = Delta_t*vF_V(v_extra,n_extra,m_extra,h_extra,Ia_extra)
-        diffusion_term = (1-r)*np.copy(v_present)
-        diffusion_term[1:-1] += (v_present[0:-2] + v_present[2:])*r/2.0
-        diffusion_term[0] += r*v_present[1]
-        diffusion_term[-1] += r*v_present[-2]
-        v_new = solve_banded((1,1),A,reaction_term+diffusion_term)
-        return v_new, n_new, m_new, h_new
     def sim_with_lees(a,L,duration,
                       Delta_x,Delta_t,
                       Ia_amp, Ia_duration):
+        def explicit_step(v,n,m,h,Ia):
+            v_new = np.copy(v)
+            n_new = np.copy(n)
+            m_new = np.copy(m)
+            h_new = np.copy(h)
+            reaction_term = Delta_t * vF_V(v,n,m,h,Ia)
+            diffusion_term = np.zeros(len(v))
+            diffusion_term[1:-1] = (v[0:-2]-2*v[1:-1]+v[2:])*r
+            diffusion_term[0] = 2*r*(v[1]-v[0])
+            diffusion_term[-1] = 2*r*(v[-2]-v[-1])
+            v_new += diffusion_term + reaction_term
+            n_new += Delta_t*vF_n(v,n)
+            m_new += Delta_t*vF_m(v,m)
+            h_new += Delta_t*vF_h(v,h)
+            return v_new,n_new,m_new,h_new
+        def lees_step(v_old,n_old,m_old,h_old,Ia_old,
+                      v_present,n_present,m_present,h_present,Ia_present):
+            from scipy.linalg import solve_banded
+            v_extra = 1.5*v_present-0.5*v_old # extrapolated mid-point value
+            n_extra = 1.5*n_present-0.5*n_old # extrapolated mid-point value
+            m_extra = 1.5*m_present-0.5*m_old # extrapolated mid-point value          
+            h_extra = 1.5*h_present-0.5*h_old # extrapolated mid-point value
+            Ia_extra = 1.5*Ia_present-0.5*Ia_old # extrapolated mid-point value
+            n_new = np.copy(n_present)+Delta_t*vF_n(v_extra,n_extra)
+            m_new = np.copy(m_present)+Delta_t*vF_m(v_extra,m_extra)
+            h_new = np.copy(h_present)+Delta_t*vF_h(v_extra,h_extra)
+            reaction_term = Delta_t*vF_V(v_extra,n_extra,m_extra,h_extra,Ia_extra)
+            diffusion_term = (1-r)*np.copy(v_present)
+            diffusion_term[1:-1] += (v_present[0:-2] + v_present[2:])*r/2.0
+            diffusion_term[0] += r*v_present[1]
+            diffusion_term[-1] += r*v_present[-2]
+            v_new = solve_banded((1,1),A,reaction_term+diffusion_term)
+            return v_new, n_new, m_new, h_new
         r = r_fct(a,Delta_x,Delta_t)
         M = int(np.ceil(L/Delta_x))
         N = int(np.ceil(duration/Delta_t))
@@ -1212,10 +1216,75 @@ The results are not shown since they are identical to the previous ones but you 
 </p>
 </div>
 </div>
+
+<div id="outline-container-orgheadline11" class="outline-3">
+<h3 id="orgheadline11"><span class="section-number-3">3.4</span> Checking against Cooley and Dodge (1966) results</h3>
+<div class="outline-text-3" id="text-3-4">
+<p>
+<a href="http://www.ncbi.nlm.nih.gov/pmc/articles/PMC1368016/">Cooley and Dodge (1966) </a>were the first to numerically solve the "full" H &amp; H model&#x2014;the one specified by equations 11-14&#x2014;and we will now reproduce their figure 2 (we get slightly different results since our stimulation is not exactly the same):
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock32">D_cd,r_cd,lambda_cd,sim_cd = mk_cable_fcts(rho=34.5,EL=10.598,T=18.5)
+v_cd,n_cd,m_cd,h_cd = sim_cd(0.0238,7,10,0.025,0.001,2500,0.2)
+</pre>
 </div>
 
-<div id="outline-container-orgheadline13" class="outline-2">
-<h2 id="orgheadline13"><span class="section-number-2">4</span> Numerical investigation of the radius effect on the extracellular potential</h2>
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock33">plt.subplot(211)
+xx = np.arange(v_cd.shape[1])*0.025
+plt.plot(xx,v_cd[200,:],color='black',lw=2)
+plt.plot(xx,v_cd[500,:],color='black',lw=2)
+plt.plot(xx,v_cd[1000,:],color='black',lw=2)
+plt.plot(xx,v_cd[2000,:],color='black',lw=2)
+plt.plot(xx,v_cd[3000,:],color='black',lw=2)
+plt.xlim(0,7)
+plt.xlabel('Position (cm)')
+plt.ylabel(r'$\Delta{}V_m$ (mV)')
+plt.subplot(212)
+tt = np.arange(v_cd.shape[0])*0.001
+plt.plot(tt,v_cd[:,0],color='black',lw=2)
+plt.plot(tt,v_cd[:,40],color='black',lw=2)
+plt.plot(tt,v_cd[:,80],color='black',lw=2)
+plt.plot(tt,v_cd[:,120],color='black',lw=2)
+plt.xlim(0,3.5)
+plt.xlabel('Time (ms)')
+plt.ylabel(r'$\Delta{}V_m$ (mV)')
+</pre>
+</div>
+
+
+<div class="figure">
+<p><img src="figsL1/Cooley_and_Dodge_1966_Fig2_replicate.png" alt="Cooley_and_Dodge_1966_Fig2_replicate.png" />
+</p>
+<p><span class="figure-number">Figure 3:</span> Replication of figure 2 from Cooley and Dodge (1966).</p>
+</div>
+
+<p>
+We get a speed [m/s] of:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock34">0.025*(np.argmax(v_cd[3000,:])-np.argmax(v_cd[2000,:]))*10
+</pre>
+</div>
+
+<pre class="example">
+19.0
+</pre>
+
+<p>
+with a precision of 25 cm that is compatible with the results reported in their table 1 (p 591).
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgheadline14" class="outline-2">
+<h2 id="orgheadline14"><span class="section-number-2">4</span> Numerical investigation of the radius effect on the extracellular potential</h2>
 <div class="outline-text-2" id="text-4">
 <p>
 Equation 10 shows an explicite axon's radius square but says nothing on the effect of radius change on \(\Delta{}V_m\). If we use our newly developped code to get the picture with an axon of 4 \(\mu{}m\) diameter we see that:
@@ -1223,7 +1292,7 @@ Equation 10 shows an explicite axon's radius square but says nothing on the effe
 
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock32">D1(4e-4)/D1(1e-4)
+<pre class="src src-python" id="orgsrcblock35">D1(4e-4)/D1(1e-4)
 </pre>
 </div>
 
@@ -1233,7 +1302,7 @@ Equation 10 shows an explicite axon's radius square but says nothing on the effe
 
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock33">lambda1(4e-4)/lambda1(1e-4)
+<pre class="src src-python" id="orgsrcblock36">lambda1(4e-4)/lambda1(1e-4)
 </pre>
 </div>
 
@@ -1247,7 +1316,7 @@ The length constant is multiplied by 2, the diffusion coefficient by 4 so we can
 
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock34">v4,n4,m4,h4 = sim1(4e-4,4,20,2*5e-3,0.025,2000,2)
+<pre class="src src-python" id="orgsrcblock37">v4,n4,m4,h4 = sim1(4e-4,4,20,2*5e-3,0.025,2000,2)
 </pre>
 </div>
 
@@ -1257,7 +1326,7 @@ We get a graph similar to the one we got with the 1 \(\mu{}m\) radius axon with 
 
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock35">xx = np.arange(v4.shape[1])*2*5e-3
+<pre class="src src-python" id="orgsrcblock38">xx = np.arange(v4.shape[1])*2*5e-3
 for i in range(0,442,40):
     plt.plot(xx,v4[i],color='black',lw=2)
 plt.xlabel('Position (cm)')
@@ -1271,7 +1340,7 @@ To compare the spatial extensions, let us extract the time at which the spikes p
 
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock36">index_1_mu = np.argmax(v1[:,200])
+<pre class="src src-python" id="orgsrcblock39">index_1_mu = np.argmax(v1[:,200])
 index_4_mu = np.argmax(v4[:,100])
 </pre>
 </div>
@@ -1282,7 +1351,7 @@ A simple graph shows then what Goldstein and Rall (1974, <i>Biophys J</i> <b>14<
 
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock37">plt.plot(np.arange(v1.shape[1])*5e-3,v1[index_1_mu],lw=2)
+<pre class="src src-python" id="orgsrcblock40">plt.plot(np.arange(v1.shape[1])*5e-3,v1[index_1_mu],lw=2)
 plt.plot(np.arange(v4.shape[1])*2*5e-3,v4[index_4_mu],lw=2)
 plt.xlim(0.5,1.5)
 plt.xlabel('Position (cm)')
@@ -1294,12 +1363,12 @@ plt.ylabel(r'$\Delta{}V_m$ (mV)')
 <div class="figure">
 <p><img src="figsL1/voltage_spatial_profile_comparison.png" alt="voltage_spatial_profile_comparison.png" />
 </p>
-<p><span class="figure-number">Figure 3:</span> Spatial profile of the membrane voltage for an axon whose radius is 1 \(\mu{}m\) (red) and an axon whose radius is 4 \(\mu{}m\) (blue).</p>
+<p><span class="figure-number">Figure 4:</span> Spatial profile of the membrane voltage for an axon whose radius is 1 \(\mu{}m\) (red) and an axon whose radius is 4 \(\mu{}m\) (blue).</p>
 </div>
 </div>
 
-<div id="outline-container-orgheadline12" class="outline-3">
-<h3 id="orgheadline12"><span class="section-number-3">4.1</span> A fast way to do the job</h3>
+<div id="outline-container-orgheadline13" class="outline-3">
+<h3 id="orgheadline13"><span class="section-number-3">4.1</span> A fast way to do the job</h3>
 <div class="outline-text-3" id="text-4-1">
 <p>
 At that stage we could simulate a lot of cases with different radii, get the corresponding voltage profiles and plug those in equation 10 to get the peak (in absolute value) extra-cellular voltages at various distances between the electrode and the axon. But we can exploit the square root relation between radius and spatial extension to get all the profiles we need from a single one. We can indeed make a cubic-spline interpolation of the first profile we obtained, say when the spike is almost all the way to the right like here:
@@ -1307,7 +1376,7 @@ At that stage we could simulate a lot of cases with different radii, get the cor
 
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock38">plt.plot(np.arange(v1.shape[1])*5e-3,v1[-1],lw=2)
+<pre class="src src-python" id="orgsrcblock41">plt.plot(np.arange(v1.shape[1])*5e-3,v1[-1],lw=2)
 plt.xlabel('Position (cm)')
 plt.ylabel(r'$\Delta{}V_m$ (mV)')
 </pre>
@@ -1317,7 +1386,7 @@ plt.ylabel(r'$\Delta{}V_m$ (mV)')
 <div class="figure">
 <p><img src="figsL1/prototypical_profile.png" alt="prototypical_profile.png" />
 </p>
-<p><span class="figure-number">Figure 4:</span> Prototypical profile used for interpolation</p>
+<p><span class="figure-number">Figure 5:</span> Prototypical profile used for interpolation</p>
 </div>
 
 <p>
@@ -1326,7 +1395,7 @@ We then define a function returning the membrane potential at a given position b
 
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock39">def spike(x,a=1.0,der=0,ext=1,
+<pre class="src src-python" id="orgsrcblock42">def spike(x,a=1.0,der=0,ext=1,
           xx=(np.arange(v1.shape[1])-np.argmax(v1[-1]))*50,
           yy=v1[-1]):
     from scipy import interpolate
@@ -1341,7 +1410,7 @@ We check that the function works:
 
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock40">xx = np.linspace(-7000,2000,9501)
+<pre class="src src-python" id="orgsrcblock43">xx = np.linspace(-7000,2000,9501)
 plt.plot(xx,spike(xx,2),color='red',lw=2)
 plt.plot(xx,spike(xx),color='black',lw=2)
 plt.plot(xx,spike(xx,0.5),color='blue',lw=2)
@@ -1354,7 +1423,7 @@ plt.ylabel(r'$\Delta{}V_m$ (mV)')
 <div class="figure">
 <p><img src="figsL1/spike_check.png" alt="spike_check.png" />
 </p>
-<p><span class="figure-number">Figure 5:</span> Membrane voltage profiles for different axon radii: 0.5 \(\mu{}m\) (blue), 1 \(\mu{}m\) (black), 2 \(\mu{}m\) (red).</p>
+<p><span class="figure-number">Figure 6:</span> Membrane voltage profiles for different axon radii: 0.5 \(\mu{}m\) (blue), 1 \(\mu{}m\) (black), 2 \(\mu{}m\) (red).</p>
 </div>
 </div>
 </div>
@@ -1373,7 +1442,7 @@ Tuckwell follows very closely&#x2014;with due citations&#x2014;the treatment of 
 <div id="postamble" class="status">
 <p class="date">Date: <span class="timestamp-wrapper"><span class="timestamp">&lt;2016-01-14 jeu.&gt;</span></span></p>
 <p class="author">Author: Christophe Pouzat</p>
-<p class="date">Created: 2016-01-18 lun. 18:38</p>
+<p class="date">Created: 2016-02-04 jeu. 10:42</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
