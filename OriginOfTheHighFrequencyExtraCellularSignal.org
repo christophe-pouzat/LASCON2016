@@ -119,7 +119,7 @@ We follow here the exposition of Tuckwell (1988) /Introduction to theoretical ne
     \frac{\partial h}{\partial t} &= \alpha_h(V_m) (1-h) - \beta_h(V_m) h \, , \label{eq:HH-h}\tag{14}
 \end{align}
 
-where $C_m$ is the membrane capacitance per unit area [F/cm$^2$]; $\overline{g}_K$, $\overline{g}_{Na}$ and $g_l$ are the potassium, sodium and leak conductances per unit area [S/cm$^2$]; $V_K$, $V_{Na}$ and $V_l$ are the potassium, sodium and leak currents reversal potentials [mV] and $I_a$ is "externally" applied current per unit area [mA/cm$^2$] and all the $\alpha$ and $\beta$ functions are measured in [1/ms]. 
+where $C_m$ is the membrane capacitance per unit area [$\mu{}F/cm^2$]; $\overline{g}_K$, $\overline{g}_{Na}$ and $g_l$ are the potassium, sodium and leak conductances per unit area [mS/cm$^2$]; $V_K$, $V_{Na}$ and $V_l$ are the potassium, sodium and leak currents reversal potentials [mV] and $I_a$ is "externally" applied current per unit area [$\mu{}A/cm^2$] and all the $\alpha$ and $\beta$ functions are measured in [1/ms]. *You have to be careful here with the units since* $\sigma_i$ *is usually given in [S/cm] leading to a first term on the right hand side of equation 11 in* [mA/cm$^2$] *while the left hand side as well as the remaining terms on the right hand side are in* [$\mu{}A/cm^2$]. 
 
 ** A standardized form for the non-linear reaction-diffusion equations 
 
@@ -653,7 +653,7 @@ Before going further, writing a couple of functions abstracting the many pieces 
 
 ** Some functions definitions
 
-We want a function that takes axon geometrical parameters---radius and length---, simulation time, space and time steps and applied current as formal parameters and for which all the other parameters (reversal potentials, conductances, etc) are set. If we want to be able to change one or several of these other parameters, it is worth exploiting one of the great features of [[https://en.wikipedia.org/wiki/Python_syntax_and_semantics][Python]]: is supports [[https://en.wikipedia.org/wiki/Closure_(computer_programming)][lexical closures]]; and that allows us to write functions returning other functions. That's what we will do here (remark that all the functions previously defined are reused directly, except =F_V= since the necessary parameters are in the lexical scope of the function definition).
+We want a function that takes axon geometrical parameters---radius and length---, simulation time, space and time steps and applied current as formal parameters and for which all the other parameters (reversal potentials, conductances, etc) are set. If we want to be able to change one or several of these other parameters, it is worth exploiting one of the great features of [[https://en.wikipedia.org/wiki/Python_syntax_and_semantics][Python]]: is supports [[https://en.wikipedia.org/wiki/Closure_(computer_programming)][lexical closures]]; and that allows us to write functions returning other functions. That's what we will do here (remark that all the functions previously defined are reused directly, except =F_V= since the necessary parameters are in the lexical scope of the function definition). In order to compare our code output with cases published in the literature like [[http://www.ncbi.nlm.nih.gov/pmc/articles/PMC1368016/][Cooley and Dodge (1966)]] we add a /temperature/, =T=, formal parameter. The H & H model parameters we used til now are valid at 6.3°C and we implement the temperature dependence of the rate equations given by H & H, Cooley and Dodge, Tuckwell, etc...  
 
 #+NAME: mk_cable_fcts-definition
 #+BEGIN_SRC python :eval no-export :results silent :noweb yes
@@ -664,7 +664,8 @@ def mk_cable_fcts(Cm = 1.0,
                   GK = 36.0,
                   EK = -12.0,
                   GL = 0.3,
-                  EL = 10.5987):
+                  EL = 10.5987,
+                  T = 6.3):
     """Returns functions for H & H axon simulation
     
     Formal parameters:
@@ -676,6 +677,7 @@ def mk_cable_fcts(Cm = 1.0,
     EK: potassium reversal potential [mV]
     GL: leak conductance density [mS / cm^2]
     EL: leak reversal potential [mV]
+    T: a positive double, the temperature in Celsius
 
     Returns:
     D_fct: a function of the axon radius in cm that
@@ -688,14 +690,50 @@ def mk_cable_fcts(Cm = 1.0,
                    the injected current that performs the simulation
     """
     import numpy as np
+    Q = 3**((T-6.3)/10)
     def D_fct(a):
         return a / (2.0 * rho * Cm)
-    <<n-activation>>
-    <<F_n-and-vF_n-definitions>>
-    <<m-activation>>
-    <<F_m-and-vF_m-definitions>>
-    <<h-activation>>
-    <<F_h-and-vF_h-definitions>>
+    def alpha_n(v):
+        if np.abs(v-10.0) < 1e-10:
+            return 0.1
+        else:
+            return 0.01*(10.0 - v)/(np.exp((10.0-v)/10.0)-1.0)
+    def beta_n(v):
+        return 0.125*np.exp(-0.0125*v)
+    n_inf = np.vectorize(lambda v: alpha_n(v)/(alpha_n(v) + beta_n(v)))
+    def F_n(v,n):
+        if np.abs(v-10.0) < 1e-10:
+            alpha = 0.1
+        else:
+            alpha = 0.01*(10.0 - v)/(np.exp((10.0-v)/10.0)-1.0)
+        beta = 0.125*np.exp(-0.0125*v)
+        return (alpha*(1-n)-beta*n)*Q
+    vF_n = np.vectorize(F_n)     
+    def alpha_m(v):
+        if np.abs(v-25.0) < 1e-10:
+            return 1.0
+        else:
+            return 0.1*(25.0 - v)/(np.exp((25.0 - v)/10.0)-1.0)
+    def beta_m(v):
+        return 4*np.exp(-.0555*v)
+    m_inf = np.vectorize(lambda v: alpha_m(v)/(alpha_m(v) + beta_m(v)))
+    def F_m(v,m):
+        if np.abs(v-25.0) < 1e-10:
+            alpha = 1.0
+        else:
+            alpha =  0.1*(25.0 - v)/(np.exp((25.0 - v)/10.0)-1.0)
+        beta = 4*np.exp(-.0555*v)
+        return (alpha*(1-m)-beta*m)*Q
+    vF_m = np.vectorize(F_m)
+    def alpha_h(v):
+        return 0.07*np.exp(-0.05*v)
+    def beta_h(v):
+        return 1.0/(np.exp((30.0 - v)/10.0) + 1.0)
+    def h_inf(v):
+        return alpha_h(v)/(alpha_h(v) + beta_h(v))
+    def F_h(v,h):
+        return Q*(0.07*np.exp(-0.05*v)*(1-h)-1.0/(np.exp((30.0 - v)/10.0) + 1.0)*h)
+    vF_h = np.vectorize(F_h)
     def F_V(v,n,m,h,Ia):
         return (GK*n**4*(EK-v)+GNa*m**3*h*(ENa-v)+GL*(EL-v)+Ia)/Cm
     vF_V = np.vectorize(F_V)
@@ -704,11 +742,11 @@ def mk_cable_fcts(Cm = 1.0,
         return np.sqrt(a/2/rho/sigma_m_rest)
     def r_fct(a,Delta_x,Delta_t):
         return D_fct(a)*Delta_t*1000/Delta_x**2
-    <<explicit_step-definition>>
-    <<lees_step-definition>>
     def sim_with_lees(a,L,duration,
                       Delta_x,Delta_t,
                       Ia_amp, Ia_duration):
+        <<explicit_step-definition>>
+        <<lees_step-definition>>
         r = r_fct(a,Delta_x,Delta_t)
         M = int(np.ceil(L/Delta_x))
         N = int(np.ceil(duration/Delta_t))
@@ -765,6 +803,61 @@ for i in range(0,442,40):
 #+END_SRC
 
 The results are not shown since they are identical to the previous ones but you are invited to check for yourself.
+
+** Checking against Cooley and Dodge (1966) results
+[[http://www.ncbi.nlm.nih.gov/pmc/articles/PMC1368016/][Cooley and Dodge (1966) ]]were the first to numerically solve the "full" H & H model---the one specified by equations 11-14---and we will now reproduce their figure 2 (we get slightly different results since our stimulation is not exactly the same):
+
+#+NAME: replicate-Cooley-and-Dodge-Fig-2-computation
+#+BEGIN_SRC python :eval no-export :results silent
+D_cd,r_cd,lambda_cd,sim_cd = mk_cable_fcts(rho=34.5,EL=10.598,T=18.5)
+v_cd,n_cd,m_cd,h_cd = sim_cd(0.0238,7,10,0.025,0.001,2500,0.2)
+#+END_SRC
+
+#+NAME: replicate-Cooley-and-Dodge-Fig-2-figure
+#+BEGIN_SRC python :eval no-export :results silent
+plt.subplot(211)
+xx = np.arange(v_cd.shape[1])*0.025
+plt.plot(xx,v_cd[200,:],color='black',lw=2)
+plt.plot(xx,v_cd[500,:],color='black',lw=2)
+plt.plot(xx,v_cd[1000,:],color='black',lw=2)
+plt.plot(xx,v_cd[2000,:],color='black',lw=2)
+plt.plot(xx,v_cd[3000,:],color='black',lw=2)
+plt.xlim(0,7)
+plt.xlabel('Position (cm)')
+plt.ylabel(r'$\Delta{}V_m$ (mV)')
+plt.subplot(212)
+tt = np.arange(v_cd.shape[0])*0.001
+plt.plot(tt,v_cd[:,0],color='black',lw=2)
+plt.plot(tt,v_cd[:,40],color='black',lw=2)
+plt.plot(tt,v_cd[:,80],color='black',lw=2)
+plt.plot(tt,v_cd[:,120],color='black',lw=2)
+plt.xlim(0,3.5)
+plt.xlabel('Time (ms)')
+plt.ylabel(r'$\Delta{}V_m$ (mV)')
+#+END_SRC 
+
+#+NAME: save-replicate-Cooley-and-Dodge-Fig-2-figure
+#+BEGIN_SRC python :eval no-exports :results file :exports results
+plt.savefig('figsL1/Cooley_and_Dodge_1966_Fig2_replicate.png')
+plt.close()
+'figsL1/Cooley_and_Dodge_1966_Fig2_replicate.png'
+#+END_SRC
+
+#+CAPTION: Replication of figure 2 from Cooley and Dodge (1966).
+#+RESULTS: save-replicate-Cooley-and-Dodge-Fig-2-figure
+[[file:figsL1/Cooley_and_Dodge_1966_Fig2_replicate.png]]
+
+We get a speed [m/s] of:
+
+#+NAME: Cooley-and-Dodge-propagation-speed
+#+BEGIN_SRC python :eval no-export :exports both
+0.025*(np.argmax(v_cd[3000,:])-np.argmax(v_cd[2000,:]))*10
+#+END_SRC
+
+#+RESULTS: Cooley-and-Dodge-propagation-speed
+: 19.0
+
+with a precision of 25 cm that is compatible with the results reported in their table 1 (p 591).
 
 * Numerical investigation of the radius effect on the extracellular potential
 
