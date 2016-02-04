@@ -843,7 +843,7 @@ plt.close()
 'figsL1/Cooley_and_Dodge_1966_Fig2_replicate.png'
 #+END_SRC
 
-#+CAPTION: Replication of figure 2 from Cooley and Dodge (1966).
+#+CAPTION: Replication of figure 2 from Cooley and Dodge (1966). Top: the voltage space profiles are shown, from left to right at 0.2, 0.5, 1, 2 and 3 ms. Bottom: the voltage time profiles are shown from left to right at 0, 1, 2 and 3 cm. 
 #+RESULTS: save-replicate-Cooley-and-Dodge-Fig-2-figure
 [[file:figsL1/Cooley_and_Dodge_1966_Fig2_replicate.png]]
 
@@ -857,7 +857,117 @@ We get a speed [m/s] of:
 #+RESULTS: Cooley-and-Dodge-propagation-speed
 : 19.0
 
-with a precision of 25 cm that is compatible with the results reported in their table 1 (p 591).
+with a precision of 25 cm/S that is compatible with the results reported in their table 1 (p 591).
+
+** Checking against the traveling wave solution 
+
+As we mentioned in the introduction, Hodgkin and Huxley did not explore numerically their "full" model but a particular solution of it: the traveling wave. Their reasoning was that is their full model was correct, the action potential---a wave propagating at a constant speed without deformation---should be one of its solutions. They therefore considered the membrane potential as a function of time observed at an arbitrary location chosen as the origin, $x=0$, far enough from both ends of the axon. Then, writing $V_0(t)$ the time course of the membrane potential observed when the action potential goes through the origin, and assuming a (constant) propagation speed, $u$, they could write the general solution of their model as: $V(x,t) = V_0(t-x/u)$, since the potential observed at location $x$ at time $t$ should be the one observed at the origin $x/u$ seconds before. Then, writing $z = t - x/u$ we have:
+
+\begin{align}
+     \frac{\partial V}{\partial t} = \frac{d V_0}{d z}\, , \label{eq:Vt-as-Vz}\tag{41} 
+\end{align}
+  
+\begin{align}
+     \frac{\partial V}{\partial x} = - \frac{1}{u} \frac{d V_0}{d z}\, , \label{eq:Vx-as-Vz}\tag{42} 
+\end{align}
+
+\begin{align}
+     \frac{\partial^2 V}{\partial x^2} =  \frac{1}{u^2} \frac{d^2 V_0}{d z^2}\, . \label{eq:Vxx-as-Vz}\tag{43} 
+\end{align}
+
+The traveling wave version of equation 11 is then:
+
+\begin{align}
+     \frac{d V_0}{d z} =  \frac{D}{u^2} \frac{d^2 V_0}{d z^2} + \left(\overline{g}_K n^4 (V_K-V_0) + \overline{g}_{Na} m^3 h (V_{Na}-V_0) + g_l (V_l - V_0)\right)/ Cm \, , \label{eq:traveling-wave}\tag{44} 
+\end{align}
+
+where $D = \frac{a \sigma_i}{2 C_m}$ like before. If the speed $u$ is known, this (set of) ODE(s) can be solved for $V_0$. The game is then to find such a $u$ for which the computed solution does not diverge (this is done by a tedious trial an error approach). Here is how it can be done using the ODE solvers of =Python=. We start by defining a "constructor" function (giving the Cooley and Dodge values as default):
+
+#+NAME: mk_travel_wave-definition
+#+BEGIN_SRC python :eval no-export :results silent
+def mk_travel_wave(a = 0.0238,
+                   Cm = 1.0,
+                   rho = 34.5, 
+                   GNa = 120.0,
+                   ENa = 115.0,
+                   GK = 36.0,
+                   EK = -12.0,
+                   GL = 0.3,
+                   EL = 10.598,
+                   T = 18.5):
+
+    Q = 3**((T-6.3)/10) ## Temperature effect
+    D = a*1000/2/rho/Cm ## Diffusion coefficient cm^2/ms
+    def F_n(v,n):
+        if np.abs(v-10.0) < 1e-10:
+            alpha = 0.1
+        else:
+            alpha = 0.01*(10.0 - v)/(np.exp((10.0-v)/10.0)-1.0)
+        beta = 0.125*np.exp(-0.0125*v)
+        return Q*(alpha*(1-n)-beta*n)
+    def F_m(v,m):
+        if np.abs(v-25.0) < 1e-10:
+            alpha = 1.0
+        else:
+            alpha =  0.1*(25.0 - v)/(np.exp((25.0 - v)/10.0)-1.0)
+        beta = 4*np.exp(-.0555*v)
+        return Q*(alpha*(1-m)-beta*m)
+    def F_h(v,h):
+        return Q*(0.07*np.exp(-0.05*v)*(1-h)-1.0/(np.exp((30.0 - v)/10.0) + 1.0)*h)
+    def F_I(i,v,n,m,h,u):
+        return u**2*(i-(GK*n**4*(EK-v)+GNa*m**3*h*(ENa-v)+GL*(EL-v))/Cm)/D
+    def F_V(i):
+        return i
+    def F(t,y,u):
+        v,i,n,m,h = y
+        return [F_V(i),F_I(i,v,n,m,h,u),F_n(v,n),F_m(v,m),F_h(v,h)]
+    return F
+#+END_SRC
+
+We then define our initial condition from the values at 1 ms of the membrane potential, n, m and h variables at 3 cm of our previous "Cooley and Dodge check".
+
+#+NAME: initial-value-travelling-wave
+#+BEGIN_SRC python :eval no-export :results silent
+y0 = [v_cd[1000,80],(v_cd[1001,80]-v_cd[1000,80])/(tt[1001]-tt[1000]),n_cd[1000,80],m_cd[1000,80],h_cd[1000,80]]
+#+END_SRC 
+
+We then call the =lsoda= solver with:
+
+#+BEGIN_SRC python :eval no-export :results silent
+from scipy.integrate import ode
+F = mk_travel_wave()
+r = ode(F)
+r.set_integrator('lsoda')
+r.set_initial_value(y0,0.0).set_f_params(1.8996800434730384);res = np.zeros((len(tt2),5))
+tt2 = np.linspace(0,10,1001)
+for i in range(1,len(tt2)): res[i] = r.integrate(tt2[i])
+#+END_SRC
+
+*Getting the speed right is the result of a long trial and error procedure (think of H & H who did not have a computer!).*
+
+We can then superpose the two solutions we got (from the full H & H model of the previous section and from the traveling wave):
+
+#+NAME: full-HH-traveling-wave-comparison
+#+BEGIN_SRC python :eval no-export :results silent
+plt.plot(tt-1,v_cd[:,80],lw=2)
+plt.plot(tt2,res[:,0])
+plt.ylim(-20,100)
+plt.xlabel('Time (ms)')
+plt.ylabel(r'$\Delta{}V_m$ (mV)')
+#+END_SRC
+
+#+NAME: full-HH-traveling-wave-comparison-fig
+#+BEGIN_SRC python :eval no-exports :results file :exports results
+plt.savefig('figsL1/Cooley_and_Dodge_Traveling_wave_comp.png')
+plt.close()
+'figsL1/Cooley_and_Dodge_Traveling_wave_comp.png'
+#+END_SRC
+
+#+CAPTION: Red: time course of the action potential obtained from a "full" H & H model solution. Blue: time course of the action potential obtained from the traveling wave equation (44) with a speed of 18.99 m/s.
+#+RESULTS: full-HH-traveling-wave-comparison-fig
+[[file:figsL1/Cooley_and_Dodge_Traveling_wave_comp.png]]
+
+*Remark that we get the same speed as the one measured from the full model giving us confidence in our codes.*
 
 * Numerical investigation of the radius effect on the extracellular potential
 
