@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2016-02-04 jeu. 16:47 -->
+<!-- 2016-02-04 jeu. 17:29 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="viewport" content="width=device-width, initial-scale=1" />
 <title>Origin Of The (High Frequency) Extra-cellular Signal</title>
@@ -1327,6 +1327,24 @@ where \(D = \frac{a \sigma_i}{2 C_m}\) like before. If the speed \(u\) is known,
                    EL = 10.598,
                    T = 18.5):
 
+    """Returns a function for H &amp; H traveling wave simulation
+    
+    Formal parameters:
+    a: a double, the axon radius [cm]
+    Cm: a double, the membrane capacitance [μF / cm^2]
+    rho: a double, intracellular resistivity [Ω cm]
+    GNa: sodium conductance density [mS / cm^2]
+    ENa: sodium reversal potential [mV]
+    GK: potassium conductance density [mS / cm^2]
+    EK: potassium reversal potential [mV]
+    GL: leak conductance density [mS / cm^2]
+    EL: leak reversal potential [mV]
+    T: a positive double, the temperature in Celsius
+
+    Returns:
+    F: a function suitable for use with ODE, the propagation
+    speed is the third formal parameter.
+    """
     Q = 3**((T-6.3)/10) ## Temperature effect
     D = a*1000/2/rho/Cm ## Diffusion coefficient cm^2/ms
     def F_n(v,n):
@@ -1376,8 +1394,10 @@ We then call the <code>lsoda</code> solver with:
 F = mk_travel_wave()
 r = ode(F)
 r.set_integrator('lsoda')
-r.set_initial_value(y0,0.0).set_f_params(1.8996800434730384);res = np.zeros((len(tt2),5))
+r.set_initial_value(y0,0.0)
+r.set_f_params(1.8996800434730384) ## propagation speed is set here [cm/ms]
 tt2 = np.linspace(0,10,1001)
+res = np.zeros((len(tt2),5))
 for i in range(1,len(tt2)): res[i] = r.integrate(tt2[i])
 </pre>
 </div>
@@ -1573,7 +1593,7 @@ Tuckwell follows very closely&#x2014;with due citations&#x2014;the treatment of 
 <div id="postamble" class="status">
 <p class="date">Date: <span class="timestamp-wrapper"><span class="timestamp">&lt;2016-01-14 jeu.&gt;</span></span></p>
 <p class="author">Author: Christophe Pouzat</p>
-<p class="date">Created: 2016-02-04 jeu. 16:47</p>
+<p class="date">Created: 2016-02-04 jeu. 17:29</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
