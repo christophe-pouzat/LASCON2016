@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2016-02-04 jeu. 17:29 -->
+<!-- 2016-02-05 ven. 16:20 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="viewport" content="width=device-width, initial-scale=1" />
 <title>Origin Of The (High Frequency) Extra-cellular Signal</title>
@@ -1222,12 +1222,12 @@ The results are not shown since they are identical to the previous ones but you 
 <h3 id="orgheadline11"><span class="section-number-3">3.4</span> Checking against Cooley and Dodge (1966) results</h3>
 <div class="outline-text-3" id="text-3-4">
 <p>
-<a href="http://www.ncbi.nlm.nih.gov/pmc/articles/PMC1368016/">Cooley and Dodge (1966) </a>were the first to numerically solve the "full" H &amp; H model&#x2014;the one specified by equations 11-14&#x2014;and we will now reproduce their figure 2 (we get slightly different results since our stimulation is not exactly the same):
+<a href="http://www.ncbi.nlm.nih.gov/pmc/articles/PMC1368016/">Cooley and Dodge (1966) </a>were the first to numerically solve the "full" H &amp; H model&#x2014;the one specified by equations 11-14&#x2014;and we will now reproduce their figure 2. There is a typo on page 586 of the paper when Cooley and Dodge give the <code>rho</code> value they used, they give 34.5 \(\Omega{} cm\) while H &amp; H give 35.4 (p 528). It is clear that Cooley and Dodge used the H &amp; H value since if one uses the value written in their paper, one get a (slightly) faster action potential.
 </p>
 
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock32">D_cd,r_cd,lambda_cd,sim_cd = mk_cable_fcts(rho=34.5,EL=10.598,T=18.5)
+<pre class="src src-python" id="orgsrcblock32">D_cd,r_cd,lambda_cd,sim_cd = mk_cable_fcts(rho=35.4,EL=10.598,T=18.5)
 v_cd,n_cd,m_cd,h_cd = sim_cd(0.0238,7,10,0.025,0.001,2500,0.2)
 </pre>
 </div>
@@ -1274,7 +1274,7 @@ We get a speed [m/s] of:
 </div>
 
 <pre class="example">
-19.0
+18.75
 </pre>
 
 <p>
@@ -1311,14 +1311,14 @@ The traveling wave version of equation 11 is then:
 \end{align}
 
 <p>
-where \(D = \frac{a \sigma_i}{2 C_m}\) like before. If the speed \(u\) is known, this (set of) ODE(s) can be solved for \(V_0\). The game is then to find such a \(u\) for which the computed solution does not diverge (this is done by a tedious trial an error approach). Here is how it can be done using the ODE solvers of <code>Python</code>. We start by defining a "constructor" function (giving the Cooley and Dodge values as default):
+where \(D = \frac{a \sigma_i}{2 C_m}\) like before. If the speed \(u\) is known, this (set of) ODE(s) can be solved for \(V_0\). The game is then to find such a \(u\) for which the computed solution does not diverge (this is done by a tedious trial an error approach). Here is how it can be done using the ODE solvers of <code>Python</code> or some classical solvers coded by ourselves. We start by defining a "constructor" function (giving the Cooley and Dodge values as default):
 </p>
 
 <div class="org-src-container">
 
 <pre class="src src-python" id="orgsrcblock35">def mk_travel_wave(a = 0.0238,
                    Cm = 1.0,
-                   rho = 34.5, 
+                   rho = 35.4, 
                    GNa = 120.0,
                    ENa = 115.0,
                    GK = 36.0,
@@ -1375,30 +1375,60 @@ where \(D = \frac{a \sigma_i}{2 C_m}\) like before. If the speed \(u\) is known,
 </div>
 
 <p>
+Then using the <code>lsoda</code> solver of <code>ODE</code> gives rise to crashes from time to time while the Runge-Kutta solvers never end. It's therefore easier to define first a fourth order <a href="https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta_methods">Runge-Kutta solver</a> that we use to initialize an <a href="https://en.wikipedia.org/wiki/Linear_multistep_method">Adams-Bashford solver</a>.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-python" id="orgsrcblock36">def rk4(y0,t0,dt,n,F):
+    res = np.zeros((n+1,len(y0)+1))
+    res[0,1:] = y0
+    res[0,0] = t0
+    current = y0
+    dt_2 = dt/2
+    dt_6 = dt/6
+    for i in range(1,n+1):
+        k1 = F(current)
+        k2 = F(current+dt_2*k1)
+        k3 = F(current+dt_2*k2)
+        k4 = F(current+dt*k3)
+        current += (k1+2*k2+2*k3+k4)*dt_6
+        res[i,1:] = current
+        res[i,0] = t0 + dt*i
+    return res
+
+def adams5(y0,t0,dt,n,F):
+    res = np.zeros((n+1,len(y0)+1))
+    rk = rk4(y0,t0,dt,4,F)
+    res[:5,:] = rk
+    fV = np.array([F(res[i,1:]) for i in range(5)])
+    w = np.array([251/720,-637/360,109/30,-1387/360,1901/720])*dt
+    for i in range(5,n+1):
+        res[i,1:] = res[i-1,1:]+np.dot(w,fV)
+        res[i,0] = t0+dt*i
+        fV = np.roll(fV,-1,0)
+        fV[4] = F(res[i,1:])
+    return res
+</pre>
+</div>
+
+<p>
 We then define our initial condition from the values at 1 ms of the membrane potential, n, m and h variables at 3 cm of our previous "Cooley and Dodge check".
 </p>
 
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock36">y0 = [v_cd[1000,80],(v_cd[1001,80]-v_cd[1000,80])/(tt[1001]-tt[1000]),n_cd[1000,80],m_cd[1000,80],h_cd[1000,80]]
+<pre class="src src-python" id="orgsrcblock37">y0 = [v_cd[1000,80],(v_cd[1001,80]-v_cd[1000,80])/(tt[1001]-tt[1000]),n_cd[1000,80],m_cd[1000,80],h_cd[1000,80]]
 </pre>
 </div>
 
 <p>
-We then call the <code>lsoda</code> solver with:
+We call our implementation of the Admas-Bashford solver using a 0.0001 ms time step and a speed of 1.8750565461815821 mm/ms (we cannot add more decimals since we reached the machine precision!):
 </p>
 
 <div class="org-src-container">
 
-<pre class="src src-python">from scipy.integrate import ode
-F = mk_travel_wave()
-r = ode(F)
-r.set_integrator('lsoda')
-r.set_initial_value(y0,0.0)
-r.set_f_params(1.8996800434730384) ## propagation speed is set here [cm/ms]
-tt2 = np.linspace(0,10,1001)
-res = np.zeros((len(tt2),5))
-for i in range(1,len(tt2)): res[i] = r.integrate(tt2[i])
+<pre class="src src-python">res = adams5(y0,0,0.0001,30000,lambda y: np.array(F(y,0,1.8750565461815821)))
 </pre>
 </div>
 
@@ -1412,8 +1442,8 @@ We can then superpose the two solutions we got (from the full H &amp; H model of
 
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock37">plt.plot(tt-1,v_cd[:,80],lw=2)
-plt.plot(tt2,res[:,0])
+<pre class="src src-python" id="orgsrcblock38">plt.plot(tt-1,v_cd[:,80],lw=2)
+plt.plot(res[:,0],res[:,1])
 plt.ylim(-20,100)
 plt.xlabel('Time (ms)')
 plt.ylabel(r'$\Delta{}V_m$ (mV)')
@@ -1424,11 +1454,11 @@ plt.ylabel(r'$\Delta{}V_m$ (mV)')
 <div class="figure">
 <p><img src="figsL1/Cooley_and_Dodge_Traveling_wave_comp.png" alt="Cooley_and_Dodge_Traveling_wave_comp.png" />
 </p>
-<p><span class="figure-number">Figure 4:</span> Red: time course of the action potential obtained from a "full" H &amp; H model solution. Blue: time course of the action potential obtained from the traveling wave equation (44) with a speed of 18.99 m/s.</p>
+<p><span class="figure-number">Figure 4:</span> Red: time course of the action potential obtained from a "full" H &amp; H model solution. Blue: time course of the action potential obtained from the traveling wave equation (44) with a speed of 18.875 m/s.</p>
 </div>
 
 <p>
-<b>Remark that we get the same speed as the one measured from the full model giving us confidence in our codes.</b>
+The divergence after 2 ms shows that we don't have enough precision of the speed, but that enough for what we want (when adjusting the speed, we added decimal observing if the divergence was going towards \(+\infty\) or \(-\infty\)). <b>Remark that we get the same speed as the one measured from the full model giving us confidence in our codes.</b>
 </p>
 </div>
 </div>
@@ -1443,7 +1473,7 @@ Equation 10 shows an explicite axon's radius square but says nothing on the effe
 
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock38">D1(4e-4)/D1(1e-4)
+<pre class="src src-python" id="orgsrcblock39">D1(4e-4)/D1(1e-4)
 </pre>
 </div>
 
@@ -1453,7 +1483,7 @@ Equation 10 shows an explicite axon's radius square but says nothing on the effe
 
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock39">lambda1(4e-4)/lambda1(1e-4)
+<pre class="src src-python" id="orgsrcblock40">lambda1(4e-4)/lambda1(1e-4)
 </pre>
 </div>
 
@@ -1467,7 +1497,7 @@ The length constant is multiplied by 2, the diffusion coefficient by 4 so we can
 
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock40">v4,n4,m4,h4 = sim1(4e-4,4,20,2*5e-3,0.025,2000,2)
+<pre class="src src-python" id="orgsrcblock41">v4,n4,m4,h4 = sim1(4e-4,4,20,2*5e-3,0.025,2000,2)
 </pre>
 </div>
 
@@ -1477,7 +1507,7 @@ We get a graph similar to the one we got with the 1 \(\mu{}m\) radius axon with 
 
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock41">xx = np.arange(v4.shape[1])*2*5e-3
+<pre class="src src-python" id="orgsrcblock42">xx = np.arange(v4.shape[1])*2*5e-3
 for i in range(0,442,40):
     plt.plot(xx,v4[i],color='black',lw=2)
 plt.xlabel('Position (cm)')
@@ -1491,7 +1521,7 @@ To compare the spatial extensions, let us extract the time at which the spikes p
 
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock42">index_1_mu = np.argmax(v1[:,200])
+<pre class="src src-python" id="orgsrcblock43">index_1_mu = np.argmax(v1[:,200])
 index_4_mu = np.argmax(v4[:,100])
 </pre>
 </div>
@@ -1502,7 +1532,7 @@ A simple graph shows then what Goldstein and Rall (1974, <i>Biophys J</i> <b>14<
 
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock43">plt.plot(np.arange(v1.shape[1])*5e-3,v1[index_1_mu],lw=2)
+<pre class="src src-python" id="orgsrcblock44">plt.plot(np.arange(v1.shape[1])*5e-3,v1[index_1_mu],lw=2)
 plt.plot(np.arange(v4.shape[1])*2*5e-3,v4[index_4_mu],lw=2)
 plt.xlim(0.5,1.5)
 plt.xlabel('Position (cm)')
@@ -1527,7 +1557,7 @@ At that stage we could simulate a lot of cases with different radii, get the cor
 
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock44">plt.plot(np.arange(v1.shape[1])*5e-3,v1[-1],lw=2)
+<pre class="src src-python" id="orgsrcblock45">plt.plot(np.arange(v1.shape[1])*5e-3,v1[-1],lw=2)
 plt.xlabel('Position (cm)')
 plt.ylabel(r'$\Delta{}V_m$ (mV)')
 </pre>
@@ -1546,7 +1576,7 @@ We then define a function returning the membrane potential at a given position b
 
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock45">def spike(x,a=1.0,der=0,ext=1,
+<pre class="src src-python" id="orgsrcblock46">def spike(x,a=1.0,der=0,ext=1,
           xx=(np.arange(v1.shape[1])-np.argmax(v1[-1]))*50,
           yy=v1[-1]):
     from scipy import interpolate
@@ -1561,7 +1591,7 @@ We check that the function works:
 
 <div class="org-src-container">
 
-<pre class="src src-python" id="orgsrcblock46">xx = np.linspace(-7000,2000,9501)
+<pre class="src src-python" id="orgsrcblock47">xx = np.linspace(-7000,2000,9501)
 plt.plot(xx,spike(xx,2),color='red',lw=2)
 plt.plot(xx,spike(xx),color='black',lw=2)
 plt.plot(xx,spike(xx,0.5),color='blue',lw=2)
@@ -1593,7 +1623,7 @@ Tuckwell follows very closely&#x2014;with due citations&#x2014;the treatment of 
 <div id="postamble" class="status">
 <p class="date">Date: <span class="timestamp-wrapper"><span class="timestamp">&lt;2016-01-14 jeu.&gt;</span></span></p>
 <p class="author">Author: Christophe Pouzat</p>
-<p class="date">Created: 2016-02-04 jeu. 17:29</p>
+<p class="date">Created: 2016-02-05 ven. 16:20</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

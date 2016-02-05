@@ -805,11 +805,11 @@ for i in range(0,442,40):
 The results are not shown since they are identical to the previous ones but you are invited to check for yourself.
 
 ** Checking against Cooley and Dodge (1966) results
-[[http://www.ncbi.nlm.nih.gov/pmc/articles/PMC1368016/][Cooley and Dodge (1966) ]]were the first to numerically solve the "full" H & H model---the one specified by equations 11-14---and we will now reproduce their figure 2 (we get slightly different results since our stimulation is not exactly the same):
+[[http://www.ncbi.nlm.nih.gov/pmc/articles/PMC1368016/][Cooley and Dodge (1966) ]]were the first to numerically solve the "full" H & H model---the one specified by equations 11-14---and we will now reproduce their figure 2. There is a typo on page 586 of the paper when Cooley and Dodge give the =rho= value they used, they give 34.5 $\Omega{} cm$ while H & H give 35.4 (p 528). It is clear that Cooley and Dodge used the H & H value since if one uses the value written in their paper, one get a (slightly) faster action potential.
 
 #+NAME: replicate-Cooley-and-Dodge-Fig-2-computation
 #+BEGIN_SRC python :eval no-export :results silent
-D_cd,r_cd,lambda_cd,sim_cd = mk_cable_fcts(rho=34.5,EL=10.598,T=18.5)
+D_cd,r_cd,lambda_cd,sim_cd = mk_cable_fcts(rho=35.4,EL=10.598,T=18.5)
 v_cd,n_cd,m_cd,h_cd = sim_cd(0.0238,7,10,0.025,0.001,2500,0.2)
 #+END_SRC
 
@@ -855,7 +855,7 @@ We get a speed [m/s] of:
 #+END_SRC
 
 #+RESULTS: Cooley-and-Dodge-propagation-speed
-: 19.0
+: 18.75
 
 with a precision of 25 cm/S that is compatible with the results reported in their table 1 (p 591).
 
@@ -881,13 +881,13 @@ The traveling wave version of equation 11 is then:
      \frac{d V_0}{d z} =  \frac{D}{u^2} \frac{d^2 V_0}{d z^2} + \left(\overline{g}_K n^4 (V_K-V_0) + \overline{g}_{Na} m^3 h (V_{Na}-V_0) + g_l (V_l - V_0)\right)/ Cm \, , \label{eq:traveling-wave}\tag{44} 
 \end{align}
 
-where $D = \frac{a \sigma_i}{2 C_m}$ like before. If the speed $u$ is known, this (set of) ODE(s) can be solved for $V_0$. The game is then to find such a $u$ for which the computed solution does not diverge (this is done by a tedious trial an error approach). Here is how it can be done using the ODE solvers of =Python=. We start by defining a "constructor" function (giving the Cooley and Dodge values as default):
+where $D = \frac{a \sigma_i}{2 C_m}$ like before. If the speed $u$ is known, this (set of) ODE(s) can be solved for $V_0$. The game is then to find such a $u$ for which the computed solution does not diverge (this is done by a tedious trial an error approach). Here is how it can be done using the ODE solvers of =Python= or some classical solvers coded by ourselves. We start by defining a "constructor" function (giving the Cooley and Dodge values as default):
 
 #+NAME: mk_travel_wave-definition
 #+BEGIN_SRC python :eval no-export :results silent
 def mk_travel_wave(a = 0.0238,
                    Cm = 1.0,
-                   rho = 34.5, 
+                   rho = 35.4, 
                    GNa = 120.0,
                    ENa = 115.0,
                    GK = 36.0,
@@ -942,6 +942,41 @@ def mk_travel_wave(a = 0.0238,
     return F
 #+END_SRC
 
+Then using the =lsoda= solver of =ODE= gives rise to crashes from time to time while the Runge-Kutta solvers never end. It's therefore easier to define first a fourth order [[https://en.wikipedia.org/wiki/Runge–Kutta_methods][Runge-Kutta solver]] that we use to initialize an [[https://en.wikipedia.org/wiki/Linear_multistep_method][Adams-Bashford solver]].
+
+#+NAME: rk4-and-adams5-definitions
+#+BEGIN_SRC python :eval no-export :results silent
+def rk4(y0,t0,dt,n,F):
+    res = np.zeros((n+1,len(y0)+1))
+    res[0,1:] = y0
+    res[0,0] = t0
+    current = y0
+    dt_2 = dt/2
+    dt_6 = dt/6
+    for i in range(1,n+1):
+        k1 = F(current)
+        k2 = F(current+dt_2*k1)
+        k3 = F(current+dt_2*k2)
+        k4 = F(current+dt*k3)
+        current += (k1+2*k2+2*k3+k4)*dt_6
+        res[i,1:] = current
+        res[i,0] = t0 + dt*i
+    return res
+
+def adams5(y0,t0,dt,n,F):
+    res = np.zeros((n+1,len(y0)+1))
+    rk = rk4(y0,t0,dt,4,F)
+    res[:5,:] = rk
+    fV = np.array([F(res[i,1:]) for i in range(5)])
+    w = np.array([251/720,-637/360,109/30,-1387/360,1901/720])*dt
+    for i in range(5,n+1):
+        res[i,1:] = res[i-1,1:]+np.dot(w,fV)
+        res[i,0] = t0+dt*i
+        fV = np.roll(fV,-1,0)
+        fV[4] = F(res[i,1:])
+    return res
+#+END_SRC 
+
 We then define our initial condition from the values at 1 ms of the membrane potential, n, m and h variables at 3 cm of our previous "Cooley and Dodge check".
 
 #+NAME: initial-value-travelling-wave
@@ -949,18 +984,10 @@ We then define our initial condition from the values at 1 ms of the membrane pot
 y0 = [v_cd[1000,80],(v_cd[1001,80]-v_cd[1000,80])/(tt[1001]-tt[1000]),n_cd[1000,80],m_cd[1000,80],h_cd[1000,80]]
 #+END_SRC 
 
-We then call the =lsoda= solver with:
+We call our implementation of the Admas-Bashford solver using a 0.0001 ms time step and a speed of 1.8750565461815821 mm/ms (we cannot add more decimals since we reached the machine precision!):
 
 #+BEGIN_SRC python :eval no-export :results silent
-from scipy.integrate import ode
-F = mk_travel_wave()
-r = ode(F)
-r.set_integrator('lsoda')
-r.set_initial_value(y0,0.0)
-r.set_f_params(1.8996800434730384) ## propagation speed is set here [cm/ms]
-tt2 = np.linspace(0,10,1001)
-res = np.zeros((len(tt2),5))
-for i in range(1,len(tt2)): res[i] = r.integrate(tt2[i])
+res = adams5(y0,0,0.0001,30000,lambda y: np.array(F(y,0,1.8750565461815821)))
 #+END_SRC
 
 *Getting the speed right is the result of a long trial and error procedure (think of H & H who did not have a computer!).*
@@ -970,7 +997,7 @@ We can then superpose the two solutions we got (from the full H & H model of the
 #+NAME: full-HH-traveling-wave-comparison
 #+BEGIN_SRC python :eval no-export :results silent
 plt.plot(tt-1,v_cd[:,80],lw=2)
-plt.plot(tt2,res[:,0])
+plt.plot(res[:,0],res[:,1])
 plt.ylim(-20,100)
 plt.xlabel('Time (ms)')
 plt.ylabel(r'$\Delta{}V_m$ (mV)')
@@ -983,11 +1010,11 @@ plt.close()
 'figsL1/Cooley_and_Dodge_Traveling_wave_comp.png'
 #+END_SRC
 
-#+CAPTION: Red: time course of the action potential obtained from a "full" H & H model solution. Blue: time course of the action potential obtained from the traveling wave equation (44) with a speed of 18.99 m/s.
+#+CAPTION: Red: time course of the action potential obtained from a "full" H & H model solution. Blue: time course of the action potential obtained from the traveling wave equation (44) with a speed of 18.875 m/s.
 #+RESULTS: full-HH-traveling-wave-comparison-fig
 [[file:figsL1/Cooley_and_Dodge_Traveling_wave_comp.png]]
 
-*Remark that we get the same speed as the one measured from the full model giving us confidence in our codes.*
+The divergence after 2 ms shows that we don't have enough precision of the speed, but that enough for what we want (when adjusting the speed, we added decimal observing if the divergence was going towards $+\infty$ or $-\infty$). *Remark that we get the same speed as the one measured from the full model giving us confidence in our codes.*
 
 * Numerical investigation of the radius effect on the extracellular potential
 
