@@ -810,7 +810,7 @@ The results are not shown since they are identical to the previous ones but you 
 #+NAME: replicate-Cooley-and-Dodge-Fig-2-computation
 #+BEGIN_SRC python :eval no-export :results silent
 D_cd,r_cd,lambda_cd,sim_cd = mk_cable_fcts(rho=35.4,EL=10.598,T=18.5)
-v_cd,n_cd,m_cd,h_cd = sim_cd(0.0238,7,10,0.025,0.001,2500,0.2)
+
 #+END_SRC
 
 #+NAME: replicate-Cooley-and-Dodge-Fig-2-figure
@@ -987,7 +987,8 @@ y0 = [v_cd[1000,80],(v_cd[1001,80]-v_cd[1000,80])/(tt[1001]-tt[1000]),n_cd[1000,
 We call our implementation of the Admas-Bashford solver using a 0.0001 ms time step and a speed of 1.8750565461815821 mm/ms (we cannot add more decimals since we reached the machine precision!):
 
 #+BEGIN_SRC python :eval no-export :results silent
-res = adams5(y0,0,0.0001,30000,lambda y: np.array(F(y,0,1.8750565461815821)))
+F = mk_travel_wave()
+res = adams5(y0,0,0.0001,30000,lambda y: np.array(F(0,y,1.8750565461815821)))
 #+END_SRC
 
 *Getting the speed right is the result of a long trial and error procedure (think of H & H who did not have a computer!).*
