@@ -1019,57 +1019,41 @@ The divergence after 2 ms shows that we don't have enough precision of the speed
 
 * Numerical investigation of the radius effect on the extracellular potential
 
-Equation 10 shows an explicite axon's radius square but says nothing on the effect of radius change on $\Delta{}V_m$. If we use our newly developped code to get the picture with an axon of 4 $\mu{}m$ diameter we see that:
+Equation 10 shows an explicite axon's radius square but says nothing on the effect of radius change on $\Delta{}V_m$. This what we are going to explore now numerically. To get closer to the experimental setting we have in mind---neocortical recordings---we are going to use a larger intracellular resistivity, 150 $\Omega{} cm$ ([[http://jn.physiology.org/content/83/4/2192][Varona et al, 2000]]) and a temperature of 30°C. We then compare two cables: a 1 and a 4 $\mu{}m$ one. 
 
-#+NAME: D-comparison
-#+BEGIN_SRC python :eval no-export :exports both
-D1(4e-4)/D1(1e-4)
-#+END_SRC
-
-#+RESULTS: D-comparison
-: 4.0
-
-#+NAME: lambda-comparison
-#+BEGIN_SRC python :eval no-export :exports both
-lambda1(4e-4)/lambda1(1e-4)
-#+END_SRC
-
-#+RESULTS: lambda-comparison
-: 2.0
-
-The length constant is multiplied by 2, the diffusion coefficient by 4 so we can simulate a cable twice as long with a space step twice as large while keeping the same $r$ value. Let's do it (we increase the stimulation amplitude also):
-
-#+NAME: lager-axon-sim
+#+NAME: high-rho-two-cases
 #+BEGIN_SRC python :eval no-export :results silent
-v4,n4,m4,h4 = sim1(4e-4,4,20,2*5e-3,0.025,2000,2)
+D0,r0,lambda0,sim0 = mk_cable_fcts(rho=150,T=30)
+v_1,n_1,m_1,h_1 = sim0(1e-4,1,20,2e-3,0.01,500,0.5)
+v_4,n_4,m_4,h_4 = sim0(4e-4,2,20,2*2e-3,0.01,1000,0.5)
 #+END_SRC
 
-We get a graph similar to the one we got with the 1 $\mu{}m$ radius axon with (result not shown):
+Since the length constant is multiplied by 2 (when the radius is multpiplied by 4), the diffusion coefficient is multiplied by 4, we simulated a cable twice as long with a space step twice as large while keeping the same $r$ value. We get a graph similar to the one we got with the 1 $\mu{}m$ radius axon with (result not shown):
 
 #+NAME: graph-voltage-spatial-profile-evolution-large
 #+BEGIN_SRC python :eval no-export :results silent
-xx = np.arange(v4.shape[1])*2*5e-3
+xx = np.arange(v_4.shape[1])*2*2e-3
 for i in range(0,442,40):
-    plt.plot(xx,v4[i],color='black',lw=2)
+    plt.plot(xx,v_4[i],color='black',lw=2)
 plt.xlabel('Position (cm)')
 plt.ylabel(r'$\Delta{}V_m$ (mV)')
 #+END_SRC
 
-To compare the spatial extensions, let us extract the time at which the spikes peaks at a distance of 1 cm:
+To compare the spatial extensions, let us extract the time at which the spikes peaks at a distance of 0.5 cm:
 
 #+NAME: extract-time-of-peak-at-1-cm
 #+BEGIN_SRC python :eval no-export :results silent
-index_1_mu = np.argmax(v1[:,200])
-index_4_mu = np.argmax(v4[:,100])
+index_1_mu = np.argmax(v_1[:,250])
+index_4_mu = np.argmax(v_4[:,125])
 #+END_SRC
 
 A simple graph shows then what Goldstein and Rall (1974, /Biophys J/ *14*:731-757) established with a dimensional analysis: /the spatial extension on an action potential is proportional to the square root of the axon's radius/.
 
 #+NAME: graph-voltage-spatial-profile-comparison
 #+BEGIN_SRC python :eval no-export :results silent
-plt.plot(np.arange(v1.shape[1])*5e-3,v1[index_1_mu],lw=2)
-plt.plot(np.arange(v4.shape[1])*2*5e-3,v4[index_4_mu],lw=2)
-plt.xlim(0.5,1.5)
+plt.plot(np.arange(v_1.shape[1])*2e-3,v_1[index_1_mu],lw=2)
+plt.plot(np.arange(v_4.shape[1])*2*2e-3,v_4[index_4_mu],lw=2)
+plt.xlim(0.4,0.6)
 plt.xlabel('Position (cm)')
 plt.ylabel(r'$\Delta{}V_m$ (mV)')
 #+END_SRC
@@ -1087,11 +1071,11 @@ plt.close()
 
 ** A fast way to do the job
 
-At that stage we could simulate a lot of cases with different radii, get the corresponding voltage profiles and plug those in equation 10 to get the peak (in absolute value) extra-cellular voltages at various distances between the electrode and the axon. But we can exploit the square root relation between radius and spatial extension to get all the profiles we need from a single one. We can indeed make a cubic-spline interpolation of the first profile we obtained, say when the spike is almost all the way to the right like here:
+At that stage we could simulate a lot of cases with different radii, get the corresponding voltage profiles and plug those in equation 10 to get the peak (in absolute value) extra-cellular voltages at various distances between the electrode and the axon. But we can exploit the square root relation between radius and spatial extension to get all the profiles we need from a single one. We can indeed make a cubic-spline interpolation of the first profile we obtained:
 
 #+NAME: prototypical-profile
 #+BEGIN_SRC python :eval no-exports :results silent
-plt.plot(np.arange(v1.shape[1])*5e-3,v1[-1],lw=2)
+plt.plot(np.arange(v_1.shape[1])*2e-3,v_1[index_1_mu],lw=2)
 plt.xlabel('Position (cm)')
 plt.ylabel(r'$\Delta{}V_m$ (mV)')
 #+END_SRC
@@ -1112,8 +1096,8 @@ We then define a function returning the membrane potential at a given position b
 #+NAME: spike-definition
 #+BEGIN_SRC python :eval no-exports :results silent
 def spike(x,a=1.0,der=0,ext=1,
-          xx=(np.arange(v1.shape[1])-np.argmax(v1[-1]))*50,
-          yy=v1[-1]):
+          xx=(np.arange(v_1.shape[1])-np.argmax(v_1[index_1_mu]))*20,
+          yy=v_1[index_1_mu]):
     from scipy import interpolate
     tck = interpolate.splrep(xx*np.sqrt(a),yy)
     return interpolate.splev(x,tck,der=der,ext=ext)
@@ -1123,7 +1107,7 @@ We check that the function works:
 
 #+NAME: spike-check
 #+BEGIN_SRC python :eval no-exports :results silent
-xx = np.linspace(-7000,2000,9501)
+xx = np.linspace(-4000,1000,5001)
 plt.plot(xx,spike(xx,2),color='red',lw=2)
 plt.plot(xx,spike(xx),color='black',lw=2)
 plt.plot(xx,spike(xx,0.5),color='blue',lw=2)
@@ -1141,5 +1125,108 @@ plt.close()
 #+CAPTION: Membrane voltage profiles for different axon radii: 0.5 $\mu{}m$ (blue), 1 $\mu{}m$ (black), 2 $\mu{}m$ (red).
 #+RESULTS: save-spike-check
 [[file:figsL1/spike_check.png]]
+
+Then, using function [[http://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.quad.html#scipy.integrate.quad][quad]] of module =scipy.integrate= we can get an evaluation of equation 10 /with error estimates/. Exploring a range of radii, from 0.1 to 20 $\mu{}m$ and a range of electrode distances from 25 to 200 $\mu{}m$:
+
+#+NAME: get-Phi_e-vs-a
+#+BEGIN_SRC python :eval no-exports :results output
+from scipy.integrate import quad
+radii = np.array(list(np.arange(0.1,1,0.1))+list(range(1,21))) # radius now in μm
+PhiV = np.zeros((len(radii),9))
+PhiV_error = np.zeros((len(radii),9))
+XX = np.linspace(-1000,1000,4001)
+for i in range(len(radii)):
+    pos = XX[np.argmin(spike(XX,radii[i],der=2))]
+    res = [quad(lambda u: radii[i]**2*(3*u**2/(u**2+h**2)**2.5-1/(u**2+h**2)**1.5)*spike(u,radii[i]),
+                -1000,1000,limit=400)
+            for h in [25,50,75,100,125,150,175,200,radii[i]]]
+    print('Axon radius:', radii[i], '(μm); minimal extracellular potential at 50 μm:',res[1])
+    PhiV[i,:] = [r[0] for r in res]
+    PhiV_error[i,:] = [r[1] for r in res]
+#+END_SRC 
+
+#+RESULTS:
+#+begin_example
+Axon radius: 0.1 (μm); minimal extracellular potential at 50 μm: (-0.0001521975893516912, 3.923267533355991e-09)
+Axon radius: 0.2 (μm); minimal extracellular potential at 50 μm: (-0.0006077856085329096, 1.2870651166493803e-08)
+Axon radius: 0.3 (μm); minimal extracellular potential at 50 μm: (-0.001312916328027134, 8.048434972732769e-09)
+Axon radius: 0.4 (μm); minimal extracellular potential at 50 μm: (-0.0022267628067888907, 3.467989806069145e-09)
+Axon radius: 0.5 (μm); minimal extracellular potential at 50 μm: (-0.0033199398038001207, 1.253798207996816e-09)
+Axon radius: 0.6 (μm); minimal extracellular potential at 50 μm: (-0.0045703597975429245, 9.23253693824768e-09)
+Axon radius: 0.7 (μm); minimal extracellular potential at 50 μm: (-0.0059608069426218295, 5.534379269877972e-09)
+Axon radius: 0.8 (μm); minimal extracellular potential at 50 μm: (-0.007477469614629965, 1.0894974745858446e-08)
+Axon radius: 0.9 (μm); minimal extracellular potential at 50 μm: (-0.009109015769799597, 5.0878683783151675e-09)
+Axon radius: 1.0 (μm); minimal extracellular potential at 50 μm: (-0.010845984199127951, 6.262465885122784e-09)
+Axon radius: 2.0 (μm); minimal extracellular potential at 50 μm: (-0.03267007984969686, 8.96114599181609e-09)
+Axon radius: 3.0 (μm); minimal extracellular potential at 50 μm: (-0.06019212230515381, 1.0697892975177908e-08)
+Axon radius: 4.0 (μm); minimal extracellular potential at 50 μm: (-0.09160793619024045, 9.53799571355656e-09)
+Axon radius: 5.0 (μm); minimal extracellular potential at 50 μm: (-0.12598423303485562, 1.4899356179035807e-08)
+Axon radius: 6.0 (μm); minimal extracellular potential at 50 μm: (-0.16274902479543205, 1.0384833996599887e-08)
+Axon radius: 7.0 (μm); minimal extracellular potential at 50 μm: (-0.20151590106439943, 1.0730643498844702e-08)
+Axon radius: 8.0 (μm); minimal extracellular potential at 50 μm: (-0.24200655853633768, 1.1586017186840156e-08)
+Axon radius: 9.0 (μm); minimal extracellular potential at 50 μm: (-0.2840112302542877, 1.0629916214739614e-08)
+Axon radius: 10.0 (μm); minimal extracellular potential at 50 μm: (-0.32736633136499627, 8.137080383871228e-09)
+Axon radius: 11.0 (μm); minimal extracellular potential at 50 μm: (-0.3719408782534829, 1.4264498813539578e-08)
+Axon radius: 12.0 (μm); minimal extracellular potential at 50 μm: (-0.41762774751334886, 1.1071998302404054e-08)
+Axon radius: 13.0 (μm); minimal extracellular potential at 50 μm: (-0.4643378087727375, 1.0439473576675248e-08)
+Axon radius: 14.0 (μm); minimal extracellular potential at 50 μm: (-0.5119958260061326, 1.3623518353657619e-08)
+Axon radius: 15.0 (μm); minimal extracellular potential at 50 μm: (-0.5605375186182346, 1.4068449557831833e-08)
+Axon radius: 16.0 (μm); minimal extracellular potential at 50 μm: (-0.6099073897287358, 9.890435929224578e-09)
+Axon radius: 17.0 (μm); minimal extracellular potential at 50 μm: (-0.6600570950101357, 1.3831870222760314e-08)
+Axon radius: 18.0 (μm); minimal extracellular potential at 50 μm: (-0.7109441938361429, 6.9990440622238504e-09)
+Axon radius: 19.0 (μm); minimal extracellular potential at 50 μm: (-0.762531154737189, 1.3068389450176968e-08)
+Axon radius: 20.0 (μm); minimal extracellular potential at 50 μm: (-0.8147846052079397, 1.4302852373942965e-08)
+#+end_example
+
+We get a graph of the extracellular potential ratios as a function of the cable radii ratios with:
+
+#+NAME: Phi_e-ratio-vs-a-ratio-fig
+#+BEGIN_SRC python :eval no-exports :results silent
+plt.plot(radii/radii[0],PhiV[:,0]/PhiV[0,0],color='black',lw=2)
+plt.plot(radii/radii[0],PhiV[:,1]/PhiV[0,1],color='black',lw=2)
+plt.plot(radii/radii[0],PhiV[:,2]/PhiV[0,2],color='black',lw=2)
+plt.plot(radii/radii[0],PhiV[:,3]/PhiV[0,3],color='black',lw=2)
+plt.plot(radii/radii[0],(radii/radii[0])**1.9,color='red',lw=2)
+plt.plot(radii/radii[0],(radii/radii[0])**1.4,color='blue',lw=2)
+plt.xlabel('Radius ratio',fontdict={'fontsize':20})
+plt.ylabel(r'$\Phi_e$ ratio',fontdict={'fontsize':20})
+#+END_SRC
+
+#+NAME: save-Phi_e-ratio-vs-a-ratio-fig
+#+BEGIN_SRC python :eval no-exports :results file :exports results
+plt.savefig('figsL1/Phi_e_vs_a.png')
+plt.close()
+'figsL1/Phi_e_vs_a.png'
+#+END_SRC
+
+#+CAPTION: $\Phi_e(a)/\Phi_e(a_{min})$ as a function of $a/a_{min}$ where $a_{min} = 0.1 \; \mu{}m$ and $a_{max} = 20 \; \mu{}m$. Four different recording electrode distances are explored from bottom to top: 25, 50, 75 and 100 $\mu{}m$. The blue curve shows $y = x^{1.4}$ while the red curve shows $y = x^{1.9}$.
+#+RESULTS: save-Phi_e-ratio-vs-a-ratio-fig
+[[file:figsL1/Phi_e_vs_a.png]]
+
+We can also get a graph showing the dependence of the extracellular potential on the recording electrode distance for various axon radii:
+
+#+NAME: Phi_e-vs-d-fig
+#+BEGIN_SRC python :eval no-exports :results silent
+d = np.array([25,50,75,100,125,150,175,200])
+plt.plot(np.log(d),np.log(-PhiV[0,:-1]),color='orange',lw=2)
+plt.plot(np.log(d),np.log(-PhiV[4,:-1]),color='black',lw=2)
+plt.plot(np.log(d),np.log(-PhiV[9,:-1]),color='black',lw=2)
+plt.plot(np.log(d),np.log(-PhiV[18,:-1]),color='black',lw=2)
+plt.plot(np.log(d),np.log(-PhiV[28,:-1]),color='brown',lw=2)
+plt.xlabel(r'$\log(d)$',fontdict={'fontsize':20})
+plt.ylabel(r'$\log -\Phi_e(d)$',fontdict={'fontsize':20})
+plt.title(r'$\Phi_e$ vs electrode-axon distance',fontdict={'fontsize':20})
+#+END_SRC
+
+#+NAME: save-Phi_e-vs-d-fig
+#+BEGIN_SRC python :eval no-exports :results file :exports results
+plt.savefig('figsL1/Phi_e_vs_d.png')
+plt.close()
+'figsL1/Phi_e_vs_d.png'
+#+END_SRC
+
+#+CAPTION: $\Phi_e(d)$ as a function of $d$ where $d_{min} = 25 \; \mu{}m$ and $d_{max} = 200 \; \mu{}m$. Five different axon radii are explored from bottom (orange) to top(brown) : 0.1, 0.5, 1, 10 and 20 $\mu{}m$.
+#+RESULTS: save-Phi_e-vs-d-fig
+[[file:figsL1/Phi_e_vs_d.png]]
 
 [fn:Ames1977] Tuckwell follows very closely---with due citations---the treatment of William F. Ames (1977) /NUMERICAL METHODS FOR PARTIAL DIFFERENTIAL EQUATIONS/ Academic Press.
