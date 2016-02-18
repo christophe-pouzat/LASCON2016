@@ -810,7 +810,7 @@ The results are not shown since they are identical to the previous ones but you 
 #+NAME: replicate-Cooley-and-Dodge-Fig-2-computation
 #+BEGIN_SRC python :eval no-export :results silent
 D_cd,r_cd,lambda_cd,sim_cd = mk_cable_fcts(rho=35.4,EL=10.598,T=18.5)
-
+v_cd,n_cd,m_cd,h_cd = sim_cd(0.0238,7,5,0.025,0.001,2500,0.2)
 #+END_SRC
 
 #+NAME: replicate-Cooley-and-Dodge-Fig-2-figure
